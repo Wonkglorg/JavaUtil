@@ -1,10 +1,12 @@
-package org.wonkglorg.files.scanner;
+package org.wonkglorg.util.files.scanner;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+@SuppressWarnings("unused")
 public class FileScanner extends Scanner<FileScanner> {
 
     /**
@@ -42,11 +44,22 @@ public class FileScanner extends Scanner<FileScanner> {
             this.scanAll = scanner.scanAll;
         }
 
+        /**
+         * Limits the amount of files to search
+         *
+         * @param limit
+         * @return
+         */
         public MultiResultScanner limit(int limit) {
             this.maxFileCount = limit;
             return this;
         }
 
+        /**
+         * searches for files given the parameters
+         *
+         * @return
+         */
         public List<Path> find() {
             List<File> paths = createFilePaths();
             List<Path> results = new ArrayList<>();
@@ -74,7 +87,7 @@ public class FileScanner extends Scanner<FileScanner> {
         }
 
 
-        public Path find() {
+        public Optional<Path> find() {
             List<File> paths = createFilePaths();
             List<Path> results = new ArrayList<>();
 
@@ -84,10 +97,10 @@ public class FileScanner extends Scanner<FileScanner> {
             }
 
             if (results.isEmpty()) {
-                return null;
+                return Optional.empty();
             }
 
-            return results.get(0);
+            return Optional.of(results.get(0));
         }
     }
 }

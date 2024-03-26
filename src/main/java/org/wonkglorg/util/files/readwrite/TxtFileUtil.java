@@ -1,13 +1,12 @@
-package org.wonkglorg.files.readwrite;
+package org.wonkglorg.util.files.readwrite;
 
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings("unused")
 public class TxtFileUtil {
-
-
     private final File file;
     private final Charset charset;
 
@@ -25,7 +24,7 @@ public class TxtFileUtil {
             }
             return lines;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error reading file: " + e.getMessage(), e);
         }
     }
 

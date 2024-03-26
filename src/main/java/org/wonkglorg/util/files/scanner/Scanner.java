@@ -1,10 +1,11 @@
-package org.wonkglorg.files.scanner;
+package org.wonkglorg.util.files.scanner;
 
 import java.io.File;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 
+@SuppressWarnings("unused")
 public abstract class Scanner<T extends Scanner<T>> {
     protected String rootPath;
     protected int depthLimit;

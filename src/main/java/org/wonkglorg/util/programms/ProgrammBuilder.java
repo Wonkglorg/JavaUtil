@@ -1,4 +1,4 @@
-package org.wonkglorg.util;
+package org.wonkglorg.util.programms;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -14,6 +14,7 @@ import java.util.function.Function;
 /**
  * Helper class to build a command line program with parameters and execute them
  */
+@SuppressWarnings("unused")
 public class ProgrammBuilder {
 
     private final List<Map.Entry<String, String>> parameters = new ArrayList<>();
