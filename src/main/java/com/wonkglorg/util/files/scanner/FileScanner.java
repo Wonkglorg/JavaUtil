@@ -1,4 +1,4 @@
-package org.wonkglorg.util.files.scanner;
+package com.wonkglorg.util.files.scanner;
 
 import java.io.File;
 import java.nio.file.Path;

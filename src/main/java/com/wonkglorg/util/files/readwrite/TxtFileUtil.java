@@ -1,4 +1,4 @@
-package org.wonkglorg.util.files.readwrite;
+package com.wonkglorg.util.files.readwrite;
 
 import java.io.*;
 import java.nio.charset.Charset;

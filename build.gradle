@@ -3,7 +3,7 @@ plugins {
 }
 
 
-group = "org.wonkglorg"
+group = "com.wonkglorg"
 version = "1.0"
 
 

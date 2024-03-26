@@ -1,4 +1,4 @@
-package org.wonkglorg.util.programms;
+package com.wonkglorg.util.programms;
 
 import java.io.BufferedReader;
 import java.io.IOException;
