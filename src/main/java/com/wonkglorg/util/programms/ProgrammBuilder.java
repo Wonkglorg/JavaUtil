@@ -14,14 +14,16 @@ import java.util.function.Function;
 /**
  * Helper class to build a command line program with parameters and execute them
  */
-@SuppressWarnings("unused")
 public class ProgrammBuilder {
 
     private final List<Map.Entry<String, String>> parameters = new ArrayList<>();
     private final String programName;
 
-    public ProgrammBuilder(String programName) {
-        this.programName = programName;
+    public ProgrammBuilder(ProcessValue processValue, String programName) {
+        switch (processValue) {
+            case ENVIROMENT -> this.programName = System.getenv(programName);
+            default -> this.programName = programName;
+        }
     }
 
     /**
@@ -87,25 +89,34 @@ public class ProgrammBuilder {
     }
 
 
-    private List<Thread> runningThreads = new ArrayList<>();
-
     /**
      * Executes the command
      */
-    public void execute(Set<OutputType> outputTypes) throws InterruptedException, IOException {
+    public Map.Entry<Process, Map<OutputType, Thread>> execute(Set<OutputType> outputTypes) throws IOException {
+        List<Thread> runningThreads = new ArrayList<>();
         System.out.println("Executing: " + this);
-        System.out.println("-----------------------------------------");
         ProcessBuilder processBuilder = new ProcessBuilder(buildArgumentArray());
         Process process = processBuilder.start();
+
 
         if (outputTypes != null) {
             outputTypes.forEach(outputType -> runningThreads.add(startThread(outputType.getInputStream(process), outputType.getAction())));
         }
 
-        process.waitFor();
+        return Map.entry(process, Map.of(OutputType.INFO, runningThreads.get(0), OutputType.ERROR, runningThreads.get(1)));
+    }
 
-        runningThreads.forEach(Thread::interrupt);
-        runningThreads.clear();
+    /**
+     * Executes the command without a console output as a return
+     *
+     * @param outputTypes
+     * @throws IOException
+     */
+    public void executeWithoutConsole(Set<OutputType> outputTypes) throws IOException {
+        System.out.println("Executing: " + this);
+        System.out.println("-----------------------------------------");
+        var result = execute(outputTypes);
+        result.getValue().values().forEach(Thread::interrupt);
         System.out.println("-----------------------------------------");
     }
 
@@ -131,7 +142,6 @@ public class ProgrammBuilder {
         return thread;
     }
 
-
     public enum OutputType {
         INFO(Process::getInputStream, System.out::println), ERROR(Process::getErrorStream, System.err::println);
 
@@ -150,5 +160,18 @@ public class ProgrammBuilder {
         public InputStream getInputStream(Process process) {
             return streamSupplier.apply(process);
         }
+    }
+
+    public enum ProcessValue {
+        /**
+         * The program name is taken from the environment variables
+         */
+        ENVIROMENT,
+
+        /**
+         * The program name is taken as a literal
+         */
+        PATH;
+
     }
 }
