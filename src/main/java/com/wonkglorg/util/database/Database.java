@@ -255,8 +255,11 @@ public abstract class Database implements AutoCloseable {
     }
 
     public enum DatabaseType {
-        MYSQL("Mysql", "jdbc:mysql:", "com.mysql.cj.jdbc.Driver"), SQLITE("Sqlite", "jdbc:sqlite:", "org.sqlite.JDBC"),
-        ;
+        MYSQL("Mysql", "jdbc:mysql:", "com.mysql.cj.jdbc.Driver"),
+        SQLITE("Sqlite", "jdbc:sqlite:", "org.sqlite.JDBC"),
+        POSTGRESQL("Postgresql", "jdbc:postgresql:", "org.postgresql.Driver"),
+        SQLSERVER("SqlServer", "jdbc:sqlserver:", "com.microsoft.sqlserver.jdbc.SQLServerDriver"),
+        MARIA("MariaDB", "jdbc:mariadb:", "org.mariadb.jdbc.Driver");
         private final String driver;
         private final String classLoader;
         private final String name;
