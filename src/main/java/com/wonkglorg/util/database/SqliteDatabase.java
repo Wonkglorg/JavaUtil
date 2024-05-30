@@ -15,6 +15,7 @@ import java.sql.*;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
 
 /**
  * @author Wonkglorg
@@ -189,6 +190,7 @@ public class SqliteDatabase extends Database {
             query.accept(getConnection());
             return new DatabaseResponse(null);
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseResponse(e);
         }
     }
@@ -198,6 +200,7 @@ public class SqliteDatabase extends Database {
         try {
             return new DatabaseUpdateResponse(null, query.apply(getConnection()));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing update: " + e.getMessage(), e);
             return new DatabaseUpdateResponse(e, -1);
         }
     }
@@ -209,13 +212,14 @@ public class SqliteDatabase extends Database {
             statement = query.apply(getConnection());
             return new DatabaseUpdateResponse(null, result.apply(statement));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing update: " + e.getMessage(), e);
             return new DatabaseUpdateResponse(e, -1);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.log(Level.SEVERE, "Error closing statement: " + e.getMessage(), e);
                 }
             }
         }
@@ -226,6 +230,7 @@ public class SqliteDatabase extends Database {
         try {
             return new DatabaseResultSetResponse(null, query.apply(getConnection()));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseResultSetResponse(e, null);
         }
     }
@@ -236,6 +241,7 @@ public class SqliteDatabase extends Database {
             PreparedStatement statement = query.apply(getConnection());
             return new DatabaseResultSetResponse(null, result.apply(statement));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseResultSetResponse(e, null);
         }
     }
@@ -245,6 +251,7 @@ public class SqliteDatabase extends Database {
         try {
             return new DatabaseObjResponse<>(null, query.apply(getConnection()));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseObjResponse<>(e, null);
         }
     }
@@ -258,6 +265,7 @@ public class SqliteDatabase extends Database {
             List<T> results = adapter.apply(resultSet);
             return new DatabaseObjResponse<>(null, results);
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseObjResponse<>(e, null);
         } finally {
             closeResources(resultSet);
@@ -269,6 +277,7 @@ public class SqliteDatabase extends Database {
         try {
             return new DatabaseSingleObjResponse<>(null, adapter.apply(getConnection()));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseSingleObjResponse<>(e, null);
         }
     }
@@ -282,6 +291,7 @@ public class SqliteDatabase extends Database {
             T results = adapter.apply(resultSet);
             return new DatabaseSingleObjResponse<>(null, results);
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseSingleObjResponse<>(e, null);
         } finally {
             closeResources(resultSet);

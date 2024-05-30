@@ -5,10 +5,15 @@ import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
 import org.jetbrains.annotations.NotNull;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.sql.*;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 /**
  * @author Wonkglorg
@@ -19,6 +24,7 @@ import java.util.function.Function;
 public abstract class Database implements AutoCloseable {
     protected final String DRIVER;
     protected final String CLASSLOADER;
+    protected final Logger logger = Logger.getLogger(Database.class.getName());
 
     protected Database(@NotNull DatabaseType databaseType) {
         this.DRIVER = databaseType.getDriver();
@@ -74,6 +80,30 @@ public abstract class Database implements AutoCloseable {
             }
         }
     }
+
+    /**
+     * Central method to create a blob from a byte array
+     *
+     * @param bytes the byte array to convert
+     * @return the blob
+     */
+    public Blob createBlob(byte[] bytes) {
+        try {
+            Blob blob = getConnection().createBlob();
+            blob.setBytes(1, bytes);
+            return blob;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static byte[] convertToByteArray(BufferedImage image, String formatType) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(image, formatType, baos);
+        return baos.toByteArray();
+    }
+
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -256,11 +286,7 @@ public abstract class Database implements AutoCloseable {
     }
 
     public enum DatabaseType {
-        MYSQL("Mysql", "jdbc:mysql:", "com.mysql.cj.jdbc.Driver"),
-        SQLITE("Sqlite", "jdbc:sqlite:", "org.sqlite.JDBC"),
-        POSTGRESQL("Postgresql", "jdbc:postgresql:", "org.postgresql.Driver"),
-        SQLSERVER("SqlServer", "jdbc:sqlserver:", "com.microsoft.sqlserver.jdbc.SQLServerDriver"),
-        MARIA("MariaDB", "jdbc:mariadb:", "org.mariadb.jdbc.Driver");
+        MYSQL("Mysql", "jdbc:mysql:", "com.mysql.cj.jdbc.Driver"), SQLITE("Sqlite", "jdbc:sqlite:", "org.sqlite.JDBC"), POSTGRESQL("Postgresql", "jdbc:postgresql:", "org.postgresql.Driver"), SQLSERVER("SqlServer", "jdbc:sqlserver:", "com.microsoft.sqlserver.jdbc.SQLServerDriver"), MARIA("MariaDB", "jdbc:mariadb:", "org.mariadb.jdbc.Driver");
         private final String driver;
         private final String classLoader;
         private final String name;

@@ -14,6 +14,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Level;
 
 public class GenericServerDatabase extends Database {
 
@@ -244,6 +245,7 @@ public class GenericServerDatabase extends Database {
             query.accept(connection);
             return new DatabaseResponse(null);
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseResponse(e);
         } finally {
             releaseConnection(connection);
@@ -256,6 +258,7 @@ public class GenericServerDatabase extends Database {
         try {
             return new DatabaseUpdateResponse(null, query.apply(connection));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing update: " + e.getMessage(), e);
             return new DatabaseUpdateResponse(e, -1);
         } finally {
             releaseConnection(connection);
@@ -270,13 +273,14 @@ public class GenericServerDatabase extends Database {
             statement = query.apply(connection);
             return new DatabaseUpdateResponse(null, result.apply(statement));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing update: " + e.getMessage(), e);
             return new DatabaseUpdateResponse(e, -1);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    logger.log(Level.SEVERE, "Error closing statement: " + e.getMessage(), e);
                 }
             }
             releaseConnection(connection);
@@ -289,6 +293,7 @@ public class GenericServerDatabase extends Database {
         try {
             return new DatabaseResultSetResponse(null, query.apply(connection));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseResultSetResponse(e, null);
         } finally {
             releaseConnection(connection);
@@ -301,6 +306,7 @@ public class GenericServerDatabase extends Database {
         try (var statement = query.apply(connection)) {
             return new DatabaseResultSetResponse(null, result.apply(statement));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseResultSetResponse(e, null);
         } finally {
             releaseConnection(connection);
@@ -313,6 +319,7 @@ public class GenericServerDatabase extends Database {
         try {
             return new DatabaseObjResponse<>(null, query.apply(connection));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseObjResponse<>(e, null);
         } finally {
             releaseConnection(connection);
@@ -328,6 +335,7 @@ public class GenericServerDatabase extends Database {
             List<T> results = adapter.apply(resultSet);
             return new DatabaseObjResponse<>(null, results);
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseObjResponse<>(e, null);
         } finally {
             closeResources(resultSet);
@@ -341,6 +349,7 @@ public class GenericServerDatabase extends Database {
         try {
             return new DatabaseSingleObjResponse<>(null, adapter.apply(connection));
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseSingleObjResponse<>(e, null);
         } finally {
             releaseConnection(connection);
@@ -356,6 +365,7 @@ public class GenericServerDatabase extends Database {
             T results = adapter.apply(resultSet);
             return new DatabaseSingleObjResponse<>(null, results);
         } catch (Exception e) {
+            logger.log(Level.SEVERE, "Error executing query: " + e.getMessage(), e);
             return new DatabaseSingleObjResponse<>(e, null);
         } finally {
             closeResources(resultSet);
