@@ -148,6 +148,18 @@ public class GenericServerDatabase extends Database {
     }
 
     /**
+     * Use a specific database for all connections
+     *
+     * @param databaseName the name of the database to use
+     */
+    public void useDatabaseForAllConnections(String databaseName) {
+        DATABASE_NAME = new DbName(databaseName);
+        for (Connection connection : connectionPool) {
+            useDatabase(connection, DATABASE_NAME);
+        }
+    }
+
+    /**
      * Helper Method to create a connection
      *
      * @return a new connection

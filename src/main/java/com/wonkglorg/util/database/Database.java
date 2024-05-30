@@ -91,6 +91,7 @@ public abstract class Database implements AutoCloseable {
      */
     public abstract DatabaseUpdateResponse executeUpdate(CheckedFunction<Connection, Integer> query);
 
+
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
      *
