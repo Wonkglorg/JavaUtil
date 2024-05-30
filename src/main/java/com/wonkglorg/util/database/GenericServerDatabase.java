@@ -1,7 +1,7 @@
 package com.wonkglorg.util.database;
 
 import com.wonkglorg.util.database.response.*;
-import com.wonkglorg.util.database.values.*;
+import com.wonkglorg.util.database.values.DbName;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
 
@@ -15,44 +15,39 @@ import java.util.logging.Level;
 
 public class GenericServerDatabase extends Database {
 
-    protected DbUser USERNAME;
-    protected DbUrl URL;
-    protected DbPassword PASSWORD;
-    protected DbName DATABASE_NAME;
-    protected DbPort PORT;
+    //todo rework database class to correctly handle connection strings from different database types currently quite limited
+    protected String connectionString;
+    protected ConnectionBuilder builder;
     private final BlockingQueue<Connection> connectionPool;
+    private DbName DATABASE_NAME;
 
 
-    public GenericServerDatabase(String driver, String classLoader, DbUrl url, DbPort port, DbUser username, DbPassword password, DbName databasename, int poolSize) {
+    public GenericServerDatabase(ConnectionBuilder builder, String driver, String classLoader, int poolSize) {
         super(driver, classLoader);
-        USERNAME = username;
-        URL = url;
-        PORT = port;
-        PASSWORD = password;
-        DATABASE_NAME = databasename;
-
+        this.builder = builder;
         connectionPool = new ArrayBlockingQueue<>(poolSize);
         initializeConnectionPool(poolSize);
     }
 
-    public GenericServerDatabase(DatabaseType type, DbUrl url, DbUser username, DbPassword password, DbName databasename, int poolSize) {
-        this(type.getDriver(), type.getClassLoader(), url, null, username, password, databasename, poolSize);
+    public GenericServerDatabase(ConnectionBuilder builder, DatabaseType databaseType, int poolSize) {
+        this(builder, databaseType.getDriver(), databaseType.getClassLoader(), poolSize);
     }
 
-    public GenericServerDatabase(String driver, String classLoader, DbUrl url, DbPort port, DbUser username, DbPassword password, int poolSize) {
-        this(driver, classLoader, url, null, username, password, null, poolSize);
+    /**
+     * Create a new GenericServerDatabase with a pool size of 3
+     *
+     * @param builder      the connection builder
+     * @param databaseType the type of database
+     */
+    public GenericServerDatabase(ConnectionBuilder builder, DatabaseType databaseType) {
+        this(builder, databaseType, 3);
     }
 
-    public GenericServerDatabase(String driver, String classLoader, DbUrl url, DbUser username) {
-        this(driver, classLoader, url, null, username, null, null, 5);
-    }
-
-    public GenericServerDatabase(DatabaseType type, DbUrl url, DbUser username, DbPassword password, int poolSize) {
-        this(type.getDriver(), type.getClassLoader(), url, null, username, password, null, poolSize);
-    }
-
-    public GenericServerDatabase(DatabaseType type, DbUrl url, DbUser username) {
-        this(type.getDriver(), type.getClassLoader(), url, null, username, null, null, 5);
+    public GenericServerDatabase(String connection, String driver, String classLoader) {
+        super(driver, classLoader);
+        this.connectionString = connection;
+        connectionPool = new ArrayBlockingQueue<>(3);
+        initializeConnectionPool(3);
     }
 
     /**
@@ -167,17 +162,12 @@ public class GenericServerDatabase extends Database {
     private Connection createConnection() {
         try {
             Class.forName(getClassLoader());
-            String connectionUrl = getDriver() + "//" + URL;
 
-            if (PORT != null) {
-                connectionUrl += ":" + PORT;
+            if (connectionString != null) {
+                return DriverManager.getConnection(connectionString);
+            } else {
+                return DriverManager.getConnection(builder.build());
             }
-
-            if (DATABASE_NAME != null) {
-                connectionUrl += "/" + DATABASE_NAME;
-            }
-
-            return DriverManager.getConnection(connectionUrl, USERNAME.toString(), PASSWORD.toString());
 
         } catch (Exception e) {
             disconnect();
