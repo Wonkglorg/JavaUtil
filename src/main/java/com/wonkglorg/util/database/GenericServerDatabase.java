@@ -1,10 +1,7 @@
 package com.wonkglorg.util.database;
 
 import com.wonkglorg.util.database.response.*;
-import com.wonkglorg.util.database.values.DbName;
-import com.wonkglorg.util.database.values.DbPassword;
-import com.wonkglorg.util.database.values.DbUrl;
-import com.wonkglorg.util.database.values.DbUser;
+import com.wonkglorg.util.database.values.*;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
 
@@ -18,17 +15,19 @@ import java.util.logging.Level;
 
 public class GenericServerDatabase extends Database {
 
-    protected final DbUser USERNAME;
-    protected final DbUrl URL;
+    protected DbUser USERNAME;
+    protected DbUrl URL;
     protected DbPassword PASSWORD;
     protected DbName DATABASE_NAME;
+    protected DbPort PORT;
     private final BlockingQueue<Connection> connectionPool;
 
 
-    public GenericServerDatabase(String driver, String classLoader, DbUrl url, DbUser username, DbPassword password, DbName databasename, int poolSize) {
+    public GenericServerDatabase(String driver, String classLoader, DbUrl url, DbPort port, DbUser username, DbPassword password, DbName databasename, int poolSize) {
         super(driver, classLoader);
         USERNAME = username;
         URL = url;
+        PORT = port;
         PASSWORD = password;
         DATABASE_NAME = databasename;
 
@@ -37,23 +36,23 @@ public class GenericServerDatabase extends Database {
     }
 
     public GenericServerDatabase(DatabaseType type, DbUrl url, DbUser username, DbPassword password, DbName databasename, int poolSize) {
-        this(type.getDriver(), type.getClassLoader(), url, username, password, databasename, poolSize);
+        this(type.getDriver(), type.getClassLoader(), url, null, username, password, databasename, poolSize);
     }
 
-    public GenericServerDatabase(String driver, String classLoader, DbUrl url, DbUser username, DbPassword password, int poolSize) {
-        this(driver, classLoader, url, username, password, null, poolSize);
+    public GenericServerDatabase(String driver, String classLoader, DbUrl url, DbPort port, DbUser username, DbPassword password, int poolSize) {
+        this(driver, classLoader, url, null, username, password, null, poolSize);
     }
 
     public GenericServerDatabase(String driver, String classLoader, DbUrl url, DbUser username) {
-        this(driver, classLoader, url, username, null, null, 5);
+        this(driver, classLoader, url, null, username, null, null, 5);
     }
 
     public GenericServerDatabase(DatabaseType type, DbUrl url, DbUser username, DbPassword password, int poolSize) {
-        this(type.getDriver(), type.getClassLoader(), url, username, password, null, poolSize);
+        this(type.getDriver(), type.getClassLoader(), url, null, username, password, null, poolSize);
     }
 
     public GenericServerDatabase(DatabaseType type, DbUrl url, DbUser username) {
-        this(type.getDriver(), type.getClassLoader(), url, username, null, null, 5);
+        this(type.getDriver(), type.getClassLoader(), url, null, username, null, null, 5);
     }
 
     /**
@@ -168,14 +167,23 @@ public class GenericServerDatabase extends Database {
     private Connection createConnection() {
         try {
             Class.forName(getClassLoader());
-            if (DATABASE_NAME == null) {
-                return DriverManager.getConnection(getDriver() + "//" + URL, USERNAME.toString(), PASSWORD.toString());
+            String connectionUrl = getDriver() + "//" + URL;
+
+            if (PORT != null) {
+                connectionUrl += ":" + PORT;
             }
-            return DriverManager.getConnection(getDriver() + "//" + URL + "/" + DATABASE_NAME, USERNAME.toString(), PASSWORD.toString());
+
+            if (DATABASE_NAME != null) {
+                connectionUrl += "/" + DATABASE_NAME;
+            }
+
+            return DriverManager.getConnection(connectionUrl, USERNAME.toString(), PASSWORD.toString());
+
         } catch (Exception e) {
             disconnect();
             throw new RuntimeException(e);
         }
+
     }
 
     /**

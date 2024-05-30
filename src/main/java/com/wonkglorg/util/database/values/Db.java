@@ -41,4 +41,14 @@ public class Db {
     public static DbName name(String name) {
         return new DbName(name);
     }
+
+    /**
+     * Represents a database port
+     *
+     * @param port
+     * @return
+     */
+    public static DbPort port(String port) {
+        return new DbPort(port);
+    }
 }

@@ -98,6 +98,23 @@ public abstract class Database implements AutoCloseable {
         return null;
     }
 
+    /**
+     * Checks the current database the connection is connected to
+     *
+     * @return
+     */
+    public String checkCurrentDatabase(Connection connection) {
+
+        try (Statement stmt = connection.createStatement(); ResultSet rs = stmt.executeQuery("SELECT DB_NAME() AS CurrentDB")) {
+            if (rs.next()) {
+                return rs.getString("CurrentDB");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error logging action: " + e.getMessage());
+        }
+        return null;
+    }
+
     public static byte[] convertToByteArray(BufferedImage image, String formatType) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ImageIO.write(image, formatType, baos);
