@@ -16,7 +16,6 @@ import java.util.logging.Level;
 public class GenericServerDatabase extends Database {
 
     //todo rework database class to correctly handle connection strings from different database types currently quite limited
-    protected String connectionString;
     protected ConnectionBuilder builder;
     private final BlockingQueue<Connection> connectionPool;
     private DbName DATABASE_NAME;
@@ -43,11 +42,8 @@ public class GenericServerDatabase extends Database {
         this(builder, databaseType, 3);
     }
 
-    public GenericServerDatabase(String connection, String driver, String classLoader) {
-        super(driver, classLoader);
-        this.connectionString = connection;
-        connectionPool = new ArrayBlockingQueue<>(3);
-        initializeConnectionPool(3);
+    public GenericServerDatabase(ConnectionBuilder builder, String driver, String classLoader) {
+        this(builder, driver, classLoader, 3);
     }
 
     /**
@@ -162,12 +158,7 @@ public class GenericServerDatabase extends Database {
     private Connection createConnection() {
         try {
             Class.forName(getClassLoader());
-
-            if (connectionString != null) {
-                return DriverManager.getConnection(connectionString);
-            } else {
-                return DriverManager.getConnection(builder.build());
-            }
+            return DriverManager.getConnection(builder.build());
 
         } catch (Exception e) {
             disconnect();
