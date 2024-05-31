@@ -214,9 +214,13 @@ public abstract class Database implements AutoCloseable {
                         args[i] = dataTypeMapper.getOrDefault(type, new TypeHandlerObject()).getParameter(resultSet, columnName);
                     }
                 }
+                try {
+                    return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
+                } catch (NoSuchMethodException e) {
+                    throw new RuntimeException("Failed to create record: " + recordClass.getName() + " with args: " + Arrays.toString(args), e);
+                }
 
-                return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 throw new IncorrectTypeConversionException("Failed to map record components: type(" + type + ") referenceName(" + columnName + ")", columnName, type, e);
             }
         };
