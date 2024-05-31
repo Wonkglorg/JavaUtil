@@ -3,6 +3,8 @@ package com.wonkglorg.util.interfaces.functional;
 import java.util.Objects;
 import java.util.function.BiFunction;
 
+@SuppressWarnings("unused")
+@FunctionalInterface
 public interface TriFunction<T, U, V, E> {
     E apply(T t, U u, V v);
 

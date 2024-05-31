@@ -13,6 +13,7 @@ import java.util.function.Function;
  * @since 1.8
  */
 @SuppressWarnings("unused")
+@FunctionalInterface
 public interface CheckedFunction<T, R> extends Function<T, R> {
     R applyChecked(T t) throws Exception;
 

@@ -3,6 +3,7 @@ package com.wonkglorg.util.interfaces.functional;
 import java.util.Objects;
 
 @SuppressWarnings("unused")
+@FunctionalInterface
 public interface TriConsumer<T, U, V> {
     void accept(T t, U u, V v);
 

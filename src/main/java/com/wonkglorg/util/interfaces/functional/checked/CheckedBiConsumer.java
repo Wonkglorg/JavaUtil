@@ -16,6 +16,7 @@ import java.util.function.BiConsumer;
  * @since 1.8
  */
 @SuppressWarnings("unused")
+@FunctionalInterface
 public interface CheckedBiConsumer<T, U> extends BiConsumer<T, U> {
     void acceptChecked(T t, U u) throws Exception;
 

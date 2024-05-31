@@ -3,6 +3,7 @@ package com.wonkglorg.util.interfaces.functional.checked;
 import com.wonkglorg.util.interfaces.functional.TriConsumer;
 
 @SuppressWarnings("unused")
+@FunctionalInterface
 public interface CheckedTriConsumer<T, U, V> extends TriConsumer<T, U, V> {
     void acceptChecked(T t, U u, V v) throws Exception;
 

@@ -14,6 +14,7 @@ import java.util.function.Consumer;
  * @since 1.8
  */
 @SuppressWarnings("unused")
+@FunctionalInterface
 public interface CheckedConsumer<T> extends Consumer<T> {
     void acceptChecked(T t) throws Exception;
 

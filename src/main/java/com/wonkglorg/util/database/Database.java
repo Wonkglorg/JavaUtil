@@ -1,11 +1,11 @@
 package com.wonkglorg.util.database;
 
+import com.wonkglorg.util.database.datatypes.*;
 import com.wonkglorg.util.database.response.*;
-import com.wonkglorg.util.interfaces.functional.checked.CheckedBiFunction;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
+import com.wonkglorg.util.interfaces.functional.database.DataTypeHandler;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -31,43 +31,24 @@ public abstract class Database implements AutoCloseable {
     protected final String DRIVER;
     protected final String CLASSLOADER;
     protected final Logger logger = Logger.getLogger(Database.class.getName());
-    private static final Map<Class<?>, CheckedBiFunction<ResultSet, String, Object>> valueMappers = new HashMap<>();
-    private static final Map<Class<?>, CheckedBiFunction<ResultSet, Integer, Object>> indexMappers = new HashMap<>();
+    private static final Map<Class<?>, DataTypeHandler<?>> dataTypeMapper = new HashMap<>();
 
     static {
-        valueMappers.put(int.class, ResultSet::getInt);
-        valueMappers.put(long.class, ResultSet::getLong);
-        valueMappers.put(double.class, ResultSet::getDouble);
-        valueMappers.put(float.class, ResultSet::getFloat);
-        valueMappers.put(boolean.class, ResultSet::getBoolean);
-        valueMappers.put(byte.class, ResultSet::getByte);
-        valueMappers.put(short.class, ResultSet::getShort);
-        valueMappers.put(char.class, (resultSet, string) -> resultSet.getString(string).charAt(0));
-        valueMappers.put(String.class, ResultSet::getString);
-        valueMappers.put(Date.class, ResultSet::getDate);
-        valueMappers.put(Time.class, ResultSet::getTime);
-        valueMappers.put(Timestamp.class, ResultSet::getTimestamp);
-        valueMappers.put(Blob.class, ResultSet::getBlob);
-        valueMappers.put(byte[].class, ResultSet::getBytes);
-        valueMappers.put(Image.class, (resultSet, string) -> ImageIO.read(resultSet.getBinaryStream(string)));
-
-
-        indexMappers.put(int.class, ResultSet::getInt);
-        indexMappers.put(long.class, ResultSet::getLong);
-        indexMappers.put(double.class, ResultSet::getDouble);
-        indexMappers.put(float.class, ResultSet::getFloat);
-        indexMappers.put(boolean.class, ResultSet::getBoolean);
-        indexMappers.put(byte.class, ResultSet::getByte);
-        indexMappers.put(short.class, ResultSet::getShort);
-        indexMappers.put(char.class, (resultSet, index) -> resultSet.getString(index).charAt(0));
-        indexMappers.put(String.class, ResultSet::getString);
-        indexMappers.put(Date.class, ResultSet::getDate);
-        indexMappers.put(Time.class, ResultSet::getTime);
-        indexMappers.put(Timestamp.class, ResultSet::getTimestamp);
-        indexMappers.put(Blob.class, ResultSet::getBlob);
-        indexMappers.put(byte[].class, ResultSet::getBytes);
-        indexMappers.put(Image.class, (resultSet, index) -> ImageIO.read(resultSet.getBinaryStream(index)));
-
+        dataTypeMapper.put(Blob.class, new TypeHandlerBlob());
+        dataTypeMapper.put(Boolean.class, new TypeHandlerBoolean());
+        dataTypeMapper.put(Byte.class, new TypeHandlerByte());
+        dataTypeMapper.put(byte[].class, new TypeHandlerByteArray());
+        dataTypeMapper.put(Character.class, new TypeHandlerChar());
+        dataTypeMapper.put(Date.class, new TypeHandlerDate());
+        dataTypeMapper.put(Double.class, new TypeHandlerDouble());
+        dataTypeMapper.put(Float.class, new TypeHandlerFloat());
+        dataTypeMapper.put(Image.class, new TypeHandlerImage());
+        dataTypeMapper.put(Integer.class, new TypeHandlerInteger());
+        dataTypeMapper.put(Long.class, new TypeHandlerLong());
+        dataTypeMapper.put(Short.class, new TypeHandlerShort());
+        dataTypeMapper.put(String.class, new TypeHandlerString());
+        dataTypeMapper.put(Time.class, new TypeHandlerTime());
+        dataTypeMapper.put(Timestamp.class, new TypeHandlerTimeStamp());
     }
 
 
@@ -180,16 +161,37 @@ public abstract class Database implements AutoCloseable {
         }
     }
 
+
+    /**
+     * Maps each row to a placeholder in the sql prepared statement
+     *
+     * @param record    the record to map
+     * @param statement the statement to map the record to
+     * @param offset    the offset to start (default:0)  starts at index 1
+     */
+    public void recordToDatabase(Record record, PreparedStatement statement, int offset) {
+        try {
+            RecordComponent[] components = record.getClass().getRecordComponents();
+            for (int i = 0; i < components.length; i++) {
+                Object value = components[i].getAccessor().invoke(record);
+                dataTypeMapper.get(value.getClass()).setParameter(statement, i + 1 + offset, value);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
     /**
      * Maps a record constructor to its matching sql columns (names MUST match or it will not work)
      * <p/>
-     * If any of the record columns do not have a adapter mapped a custom can be added / overwritten  with {@link #addValueMapper(Class, CheckedBiFunction)}
+     * If any of the record columns do not have a adapter mapped a custom can be added / overwritten  with {@link #addDataMapper(Class, DataTypeHandler)}
      *
      * @param recordClass the record class to map
      * @param <T>         the type of the record
      * @return the adapter to convert the result set to a record
      */
-    public <T extends Record> CheckedFunction<ResultSet, T> recordAdapter(Class<T> recordClass) {
+    protected <T extends Record> CheckedFunction<ResultSet, T> genericRecordAdapter(Class<T> recordClass, boolean useIndex, int offset) {
         return resultSet -> {
             try {
                 RecordComponent[] components = recordClass.getRecordComponents();
@@ -203,7 +205,11 @@ public abstract class Database implements AutoCloseable {
                     RecordComponent component = components[i];
                     String columnName = component.getName();
                     Class<?> type = component.getType();
-                    args[i] = valueMappers.getOrDefault(type, (result, string) -> resultSet.getObject(columnName, type)).apply(resultSet, columnName);
+                    if (useIndex) {
+                        args[i] = dataTypeMapper.getOrDefault(type, new TypeHandlerObject()).getParameter(resultSet, i + 1 + offset);
+                    } else {
+                        args[i] = dataTypeMapper.getOrDefault(type, new TypeHandlerObject()).getParameter(resultSet, columnName);
+                    }
                 }
 
                 return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
@@ -214,34 +220,30 @@ public abstract class Database implements AutoCloseable {
     }
 
     /**
-     * Maps a record constructor to its matching sql columns (in index order constructor must match the order)
+     * Maps a record constructor to its matching sql columns (names MUST match or it will not work)
      * <p/>
-     * If any of the record columns do not have a adapter mapped a custom can be added / overwritten  with {@link #addIndexMapper(Class, CheckedBiFunction)}
+     * If any of the record columns do not have a adapter mapped a custom can be added / overwritten  with {@link #addDataMapper(Class, DataTypeHandler)}
      *
      * @param recordClass the record class to map
      * @param <T>         the type of the record
      * @return the adapter to convert the result set to a record
      */
-    public <T extends Record> CheckedFunction<ResultSet, T> recordIndexAdapter(Class<T> recordClass) {
-        return resultSet -> {
-            try {
-                RecordComponent[] components = recordClass.getRecordComponents();
-                Object[] args = new Object[components.length];
+    public <T extends Record> CheckedFunction<ResultSet, T> recordAdapter(Class<T> recordClass) {
+        return genericRecordAdapter(recordClass, false, 0);
+    }
 
-                if (resultSet == null) {
-                    throw new SQLException("Result set is null");
-                }
-
-                for (int i = 0; i < components.length; i++) {
-                    Class<?> type = components[i].getType();
-                    args[i] = indexMappers.getOrDefault(type, (result, index) -> resultSet.getObject(index, type)).apply(resultSet, i + 1);
-                }
-
-                return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
-            } catch (Exception e) {
-                throw new SQLException("Failed to map record components", e);
-            }
-        };
+    /**
+     * Maps a record constructor to its matching sql columns (in index order constructor must match the order)
+     * <p/>
+     * If any of the record columns do not have a adapter mapped a custom can be added / overwritten  with {@link #addDataMapper(Class, DataTypeHandler)}
+     *
+     * @param recordClass the record class to map
+     * @param <T>         the type of the record
+     * @param offset      the offset to start (default:0)  starts at index 1
+     * @return the adapter to convert the result set to a record
+     */
+    public <T extends Record> CheckedFunction<ResultSet, T> recordIndexAdapter(Class<T> recordClass, int offset) {
+        return genericRecordAdapter(recordClass, true, offset);
     }
 
 
@@ -479,45 +481,26 @@ public abstract class Database implements AutoCloseable {
 
 
     /**
-     * Adds a value mapper to auto map values in a record {@link #recordAdapter}
+     * Adds a data mapper function used in {@link #recordAdapter(Class)} and{@link #recordIndexAdapter(Class, int)} (Class)} to map records to the correct type
      *
-     * @param type   the type to map
-     * @param mapper the mapper to map the value
-     * @return the previous mapper if there was one
-     */
-    public @Nullable CheckedBiFunction<ResultSet, String, Object> addValueMapper(Class<?> type, CheckedBiFunction<ResultSet, String, Object> mapper) {
-        return valueMappers.put(type, mapper);
-    }
-
-    /**
-     * Removes a value mapper from the auto mapper list used in {@link #recordAdapter}
-     *
-     * @param type the type to remove
-     * @return the removed mapper if there was one
-     */
-    public @Nullable CheckedBiFunction<ResultSet, String, Object> removeValueMapper(Class<?> type) {
-        return valueMappers.remove(type);
-    }
-
-    /**
-     * Adds a index mapper to auto map values in a record {@link #recordIndexAdapter}
-     *
-     * @param type
-     * @param mapper
+     * @param type    the type to map
+     * @param handler mapper function
+     * @param <T>     the type of the handler
      * @return
      */
-    public @Nullable CheckedBiFunction<ResultSet, Integer, Object> addIndexMapper(Class<?> type, CheckedBiFunction<ResultSet, Integer, Object> mapper) {
-        return indexMappers.put(type, mapper);
+    public static <T> DataTypeHandler<T> addDataMapper(Class<T> type, DataTypeHandler<T> handler) {
+        return (DataTypeHandler<T>) dataTypeMapper.put(type, handler);
     }
 
     /**
-     * Removes a index mapper from the auto mapper list used in {@link #recordIndexAdapter}
+     * Removes a data mapper used in  {@link #recordAdapter(Class)} and  {@link #recordIndexAdapter(Class, int)} to map records to the correct type
      *
      * @param type the type to remove
-     * @return the removed mapper if there was one
+     * @param <T>  the type of the handler
+     * @return the removed handler
      */
-    public @Nullable CheckedBiFunction<ResultSet, Integer, Object> removeIndexMapper(Class<?> type) {
-        return indexMappers.remove(type);
+    public static <T> DataTypeHandler<T> removeDataMapper(Class<T> type) {
+        return (DataTypeHandler<T>) dataTypeMapper.remove(type);
     }
 
     public enum DatabaseType {

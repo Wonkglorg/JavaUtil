@@ -15,7 +15,8 @@ import java.util.function.BiFunction;
  * @see CheckedFunction
  * @since 1.8
  */
-@SuppressWarnings({"unused"})
+@SuppressWarnings("unused")
+@FunctionalInterface
 public interface CheckedBiFunction<T, U, R> extends BiFunction<T, U, R> {
     R applyChecked(T t, U u) throws Exception;
 
