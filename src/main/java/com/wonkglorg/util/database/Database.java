@@ -6,10 +6,13 @@ import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
 import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.RecordComponent;
 import java.sql.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -79,6 +82,108 @@ public abstract class Database implements AutoCloseable {
                 e.printStackTrace();
             }
         }
+    }
+
+    public CheckedFunction<ResultSet, Integer> singleIntAdapter() {
+        return resultSet -> resultSet.getInt(1);
+    }
+
+    public CheckedFunction<ResultSet, String> singleStringAdapter() {
+        return resultSet -> resultSet.getString(1);
+    }
+
+    public CheckedFunction<ResultSet, Boolean> singleBooleanAdapter() {
+        return resultSet -> resultSet.getBoolean(1);
+    }
+
+    public CheckedFunction<ResultSet, Long> singleLongAdapter() {
+        return resultSet -> resultSet.getLong(1);
+    }
+
+    public CheckedFunction<ResultSet, Double> singleDoubleAdapter() {
+        return resultSet -> resultSet.getDouble(1);
+    }
+
+    public CheckedFunction<ResultSet, Float> singleFloatAdapter() {
+        return resultSet -> resultSet.getFloat(1);
+    }
+
+    public CheckedFunction<ResultSet, Short> singleShortAdapter() {
+        return resultSet -> resultSet.getShort(1);
+    }
+
+    public CheckedFunction<ResultSet, Byte> singleByteAdapter() {
+        return resultSet -> resultSet.getByte(1);
+    }
+
+    public <T extends Record> CheckedFunction<ResultSet, T> recordAdapter(Class<T> recordClass) {
+        return resultSet -> {
+            try {
+                RecordComponent[] components = recordClass.getRecordComponents();
+                Object[] args = new Object[components.length];
+
+                for (int i = 0; i < components.length; i++) {
+                    String columnName = components[i].getName();
+                    Class<?> type = components[i].getType();
+                    if (type == int.class) {
+                        args[i] = resultSet.getInt(columnName);
+                    } else if (type == long.class) {
+                        args[i] = resultSet.getLong(columnName);
+                    } else if (type == double.class) {
+                        args[i] = resultSet.getDouble(columnName);
+                    } else if (type == float.class) {
+                        args[i] = resultSet.getFloat(columnName);
+                    } else if (type == boolean.class) {
+                        args[i] = resultSet.getBoolean(columnName);
+                    } else if (type == String.class) {
+                        args[i] = resultSet.getString(columnName);
+                    } else if (type == short.class) {
+                        args[i] = resultSet.getShort(columnName);
+                    } else if (type == byte.class) {
+                        args[i] = resultSet.getByte(columnName);
+                    } else if (type == byte[].class) {
+                        args[i] = resultSet.getBytes(columnName);
+                    } else if (type == char.class) {
+                        args[i] = resultSet.getString(columnName).charAt(0);
+                    } else if (type == Date.class) {
+                        args[i] = resultSet.getDate(columnName);
+                    } else if (type == Time.class) {
+                        args[i] = resultSet.getTime(columnName);
+                    } else if (type == Timestamp.class) {
+                        args[i] = resultSet.getTimestamp(columnName);
+                    } else if (type == Blob.class) {
+                        args[i] = resultSet.getBlob(columnName);
+                    } else if (type == Image.class) {
+                        try {
+                            args[i] = ImageIO.read(resultSet.getBinaryStream(columnName));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        args[i] = resultSet.getObject(columnName, type);
+                    }
+                }
+
+                return recordClass.getDeclaredConstructor(Arrays.stream(components)
+                        .map(RecordComponent::getType)
+                        .toArray(Class<?>[]::new)).newInstance(args);
+            } catch (Exception e) {
+                throw new SQLException("Failed to map record components", e);
+            }
+        }
+
+                ;
+    }
+
+    public <T> T getSingleObject(ResultSet resultSet, CheckedFunction<ResultSet, T> adapter) {
+        try {
+            if (resultSet.next()) {
+                return adapter.apply(resultSet);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
