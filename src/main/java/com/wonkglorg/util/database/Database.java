@@ -5,6 +5,7 @@ import com.wonkglorg.util.interfaces.functional.checked.CheckedBiFunction;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -408,6 +409,28 @@ public abstract class Database implements AutoCloseable {
      */
     public String getDriver() {
         return DRIVER;
+    }
+
+
+    /**
+     * Adds a value mapper to auto map values in a record {@link #recordAdapter}
+     *
+     * @param type   the type to map
+     * @param mapper the mapper to map the value
+     * @return the previous mapper if there was one
+     */
+    public @Nullable CheckedBiFunction<ResultSet, String, Object> addValueMapper(Class<?> type, CheckedBiFunction<ResultSet, String, Object> mapper) {
+        return valueMappers.put(type, mapper);
+    }
+
+    /**
+     * Removes a value mapper from the auto mapper list used in {@link #recordAdapter}
+     *
+     * @param type the type to remove
+     * @return the removed mapper if there was one
+     */
+    public @Nullable CheckedBiFunction<ResultSet, String, Object> removeValueMapper(Class<?> type) {
+        return valueMappers.remove(type);
     }
 
     public enum DatabaseType {
