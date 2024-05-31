@@ -33,9 +33,9 @@ public abstract class Database implements AutoCloseable {
     protected final String CLASSLOADER;
     protected final Logger logger = Logger.getLogger(Database.class.getName());
     private static final Map<Class<?>, CheckedBiFunction<ResultSet, String, Object>> valueMappers = new HashMap<>();
+    private static final Map<Class<?>, CheckedBiFunction<ResultSet, Integer, Object>> indexMappers = new HashMap<>();
 
     static {
-
         valueMappers.put(int.class, ResultSet::getInt);
         valueMappers.put(long.class, ResultSet::getLong);
         valueMappers.put(double.class, ResultSet::getDouble);
@@ -51,8 +51,24 @@ public abstract class Database implements AutoCloseable {
         valueMappers.put(Blob.class, ResultSet::getBlob);
         valueMappers.put(byte[].class, ResultSet::getBytes);
         valueMappers.put(Image.class, (resultSet, string) -> ImageIO.read(resultSet.getBinaryStream(string)));
-        //default mapper if nothing was found
-        valueMappers.put(Object.class, ResultSet::getObject);
+
+
+        indexMappers.put(int.class, ResultSet::getInt);
+        indexMappers.put(long.class, ResultSet::getLong);
+        indexMappers.put(double.class, ResultSet::getDouble);
+        indexMappers.put(float.class, ResultSet::getFloat);
+        indexMappers.put(boolean.class, ResultSet::getBoolean);
+        indexMappers.put(byte.class, ResultSet::getByte);
+        indexMappers.put(short.class, ResultSet::getShort);
+        indexMappers.put(char.class, (resultSet, index) -> resultSet.getString(index).charAt(0));
+        indexMappers.put(String.class, ResultSet::getString);
+        indexMappers.put(Date.class, ResultSet::getDate);
+        indexMappers.put(Time.class, ResultSet::getTime);
+        indexMappers.put(Timestamp.class, ResultSet::getTimestamp);
+        indexMappers.put(Blob.class, ResultSet::getBlob);
+        indexMappers.put(byte[].class, ResultSet::getBytes);
+        indexMappers.put(Image.class, (resultSet, index) -> ImageIO.read(resultSet.getBinaryStream(index)));
+
     }
 
 
@@ -143,6 +159,15 @@ public abstract class Database implements AutoCloseable {
         return resultSet -> resultSet.getByte(1);
     }
 
+    /**
+     * Maps a record constructor to its matching sql columns (names MUST match or it will not work)
+     * <p/>
+     * If any of the record columns do not have a adapter mapped a custom can be added / overwritten  with {@link #addValueMapper(Class, CheckedBiFunction)}
+     *
+     * @param recordClass the record class to map
+     * @param <T>         the type of the record
+     * @return the adapter to convert the result set to a record
+     */
     public <T extends Record> CheckedFunction<ResultSet, T> recordAdapter(Class<T> recordClass) {
         return resultSet -> {
             try {
@@ -153,17 +178,43 @@ public abstract class Database implements AutoCloseable {
                 for (RecordComponent component : components) {
                     String columnName = component.getName();
                     Class<?> type = component.getType();
-                    valueMappers.getOrDefault(type, valueMappers.get(Object.class)).apply(resultSet, columnName);
+                    valueMappers.getOrDefault(type, (result, string) -> resultSet.getObject(columnName, type)).apply(resultSet, columnName);
                 }
 
-                return recordClass.getDeclaredConstructor(Arrays.stream(components)
-                        .map(RecordComponent::getType)
-                        .toArray(Class<?>[]::new)).newInstance(args);
+                return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
             } catch (Exception e) {
                 throw new SQLException("Failed to map record components", e);
             }
         };
     }
+
+    /**
+     * Maps a record constructor to its matching sql columns (in index order constructor must match the order)
+     * <p/>
+     * If any of the record columns do not have a adapter mapped a custom can be added / overwritten  with {@link #addIndexMapper(Class, CheckedBiFunction)}
+     *
+     * @param recordClass the record class to map
+     * @param <T>         the type of the record
+     * @return the adapter to convert the result set to a record
+     */
+    public <T extends Record> CheckedFunction<ResultSet, T> recordIndexAdapter(Class<T> recordClass) {
+        return resultSet -> {
+            try {
+                RecordComponent[] components = recordClass.getRecordComponents();
+                Object[] args = new Object[components.length];
+
+                for (int i = 0; i < components.length; i++) {
+                    Class<?> type = components[i].getType();
+                    args[i] = indexMappers.getOrDefault(type, (result, index) -> resultSet.getObject(index, type)).apply(resultSet, i + 1);
+                }
+
+                return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
+            } catch (Exception e) {
+                throw new SQLException("Failed to map record components", e);
+            }
+        };
+    }
+
 
     public <T> T getSingleObject(ResultSet resultSet, CheckedFunction<ResultSet, T> adapter) {
         try {
@@ -242,9 +293,7 @@ public abstract class Database implements AutoCloseable {
      * @return DatabaseResponse
      */
 
-    public abstract DatabaseUpdateResponse executeUpdate
-    (CheckedFunction<Connection, PreparedStatement> query, CheckedFunction<PreparedStatement, Integer> result)
-    ;
+    public abstract DatabaseUpdateResponse executeUpdate(CheckedFunction<Connection, PreparedStatement> query, CheckedFunction<PreparedStatement, Integer> result);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -262,9 +311,7 @@ public abstract class Database implements AutoCloseable {
      * @param result the result of the query
      * @return DatabaseResponse
      */
-    public abstract DatabaseResultSetResponse executeQuery
-    (CheckedFunction<Connection, PreparedStatement> query, CheckedFunction<PreparedStatement, ResultSet> result)
-    ;
+    public abstract DatabaseResultSetResponse executeQuery(CheckedFunction<Connection, PreparedStatement> query, CheckedFunction<PreparedStatement, ResultSet> result);
 
 
     /**
@@ -274,8 +321,7 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <
-            T> DatabaseObjResponse<T> executeObjQuery(CheckedFunction<Connection, List<T>> adapter);
+    public abstract <T> DatabaseObjResponse<T> executeObjQuery(CheckedFunction<Connection, List<T>> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -286,8 +332,7 @@ public abstract class Database implements AutoCloseable {
      * @return DatabaseResponse
      */
 
-    public abstract <
-            T> DatabaseObjResponse<T> executeObjQuery(CheckedFunction<Connection, ResultSet> query, CheckedFunction<ResultSet, List<T>> result);
+    public abstract <T> DatabaseObjResponse<T> executeObjQuery(CheckedFunction<Connection, ResultSet> query, CheckedFunction<ResultSet, List<T>> result);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -296,8 +341,7 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <
-            T> DatabaseSingleObjResponse<T> executeSingleObjQuery(CheckedFunction<Connection, T> adapter);
+    public abstract <T> DatabaseSingleObjResponse<T> executeSingleObjQuery(CheckedFunction<Connection, T> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -307,8 +351,7 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <
-            T> DatabaseSingleObjResponse<T> executeSingleObjQuery(CheckedFunction<Connection, ResultSet> query, CheckedFunction<ResultSet, T> adapter);
+    public abstract <T> DatabaseSingleObjResponse<T> executeSingleObjQuery(CheckedFunction<Connection, ResultSet> query, CheckedFunction<ResultSet, T> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -334,8 +377,7 @@ public abstract class Database implements AutoCloseable {
      * @param result the result of the query
      * @return DatabaseResponse
      */
-    public abstract DatabaseUpdateResponse executeUpdateUnchecked
-    (Function<Connection, PreparedStatement> query, Function<PreparedStatement, Integer> result);
+    public abstract DatabaseUpdateResponse executeUpdateUnchecked(Function<Connection, PreparedStatement> query, Function<PreparedStatement, Integer> result);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done not handle exceptions automatically
@@ -352,8 +394,7 @@ public abstract class Database implements AutoCloseable {
      * @param result the result of the query
      * @return DatabaseResponse
      */
-    public abstract DatabaseResultSetResponse executeQueryUnchecked
-    (Function<Connection, PreparedStatement> query, Function<PreparedStatement, ResultSet> result);
+    public abstract DatabaseResultSetResponse executeQueryUnchecked(Function<Connection, PreparedStatement> query, Function<PreparedStatement, ResultSet> result);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done does not handle exceptions automatically
@@ -362,8 +403,7 @@ public abstract class Database implements AutoCloseable {
      * @param <T>   the type of the object to return
      * @return the result of the query
      */
-    public abstract <
-            T> DatabaseObjResponse<T> executeObjQueryUnchecked(Function<Connection, List<T>> query);
+    public abstract <T> DatabaseObjResponse<T> executeObjQueryUnchecked(Function<Connection, List<T>> query);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done does not handle exceptions automatically
@@ -373,8 +413,7 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <
-            T> DatabaseObjResponse<T> executeObjQueryUnchecked(Function<Connection, ResultSet> query, Function<ResultSet, List<T>> adapter);
+    public abstract <T> DatabaseObjResponse<T> executeObjQueryUnchecked(Function<Connection, ResultSet> query, Function<ResultSet, List<T>> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done does not handle exceptions automatically
@@ -383,8 +422,7 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <
-            T> DatabaseSingleObjResponse<T> executeSingleObjQueryUnchecked(Function<Connection, T> adapter);
+    public abstract <T> DatabaseSingleObjResponse<T> executeSingleObjQueryUnchecked(Function<Connection, T> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done does not handle exceptions automatically
@@ -394,8 +432,7 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <
-            T> DatabaseSingleObjResponse<T> executeSingleObjQueryUnchecked(Function<Connection, ResultSet> query, Function<ResultSet, T> adapter);
+    public abstract <T> DatabaseSingleObjResponse<T> executeSingleObjQueryUnchecked(Function<Connection, ResultSet> query, Function<ResultSet, T> adapter);
 
     /**
      * @return the classloader path
@@ -431,6 +468,27 @@ public abstract class Database implements AutoCloseable {
      */
     public @Nullable CheckedBiFunction<ResultSet, String, Object> removeValueMapper(Class<?> type) {
         return valueMappers.remove(type);
+    }
+
+    /**
+     * Adds a index mapper to auto map values in a record {@link #recordIndexAdapter}
+     *
+     * @param type
+     * @param mapper
+     * @return
+     */
+    public @Nullable CheckedBiFunction<ResultSet, Integer, Object> addIndexMapper(Class<?> type, CheckedBiFunction<ResultSet, Integer, Object> mapper) {
+        return indexMappers.put(type, mapper);
+    }
+
+    /**
+     * Removes a index mapper from the auto mapper list used in {@link #recordIndexAdapter}
+     *
+     * @param type the type to remove
+     * @return the removed mapper if there was one
+     */
+    public @Nullable CheckedBiFunction<ResultSet, Integer, Object> removeIndexMapper(Class<?> type) {
+        return indexMappers.remove(type);
     }
 
     public enum DatabaseType {
