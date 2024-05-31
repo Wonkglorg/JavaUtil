@@ -1,6 +1,7 @@
 package com.wonkglorg.util.database;
 
 import com.wonkglorg.util.database.response.*;
+import com.wonkglorg.util.interfaces.functional.checked.CheckedBiFunction;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +14,9 @@ import java.io.IOException;
 import java.lang.reflect.RecordComponent;
 import java.sql.*;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -28,6 +31,29 @@ public abstract class Database implements AutoCloseable {
     protected final String DRIVER;
     protected final String CLASSLOADER;
     protected final Logger logger = Logger.getLogger(Database.class.getName());
+    private static final Map<Class<?>, CheckedBiFunction<ResultSet, String, Object>> valueMappers = new HashMap<>();
+
+    static {
+
+        valueMappers.put(int.class, ResultSet::getInt);
+        valueMappers.put(long.class, ResultSet::getLong);
+        valueMappers.put(double.class, ResultSet::getDouble);
+        valueMappers.put(float.class, ResultSet::getFloat);
+        valueMappers.put(boolean.class, ResultSet::getBoolean);
+        valueMappers.put(byte.class, ResultSet::getByte);
+        valueMappers.put(short.class, ResultSet::getShort);
+        valueMappers.put(char.class, (resultSet, string) -> resultSet.getString(string).charAt(0));
+        valueMappers.put(String.class, ResultSet::getString);
+        valueMappers.put(Date.class, ResultSet::getDate);
+        valueMappers.put(Time.class, ResultSet::getTime);
+        valueMappers.put(Timestamp.class, ResultSet::getTimestamp);
+        valueMappers.put(Blob.class, ResultSet::getBlob);
+        valueMappers.put(byte[].class, ResultSet::getBytes);
+        valueMappers.put(Image.class, (resultSet, string) -> ImageIO.read(resultSet.getBinaryStream(string)));
+        //default mapper if nothing was found
+        valueMappers.put(Object.class, ResultSet::getObject);
+    }
+
 
     protected Database(@NotNull DatabaseType databaseType) {
         this.DRIVER = databaseType.getDriver();
@@ -122,46 +148,11 @@ public abstract class Database implements AutoCloseable {
                 RecordComponent[] components = recordClass.getRecordComponents();
                 Object[] args = new Object[components.length];
 
-                for (int i = 0; i < components.length; i++) {
-                    String columnName = components[i].getName();
-                    Class<?> type = components[i].getType();
-                    if (type == int.class) {
-                        args[i] = resultSet.getInt(columnName);
-                    } else if (type == long.class) {
-                        args[i] = resultSet.getLong(columnName);
-                    } else if (type == double.class) {
-                        args[i] = resultSet.getDouble(columnName);
-                    } else if (type == float.class) {
-                        args[i] = resultSet.getFloat(columnName);
-                    } else if (type == boolean.class) {
-                        args[i] = resultSet.getBoolean(columnName);
-                    } else if (type == String.class) {
-                        args[i] = resultSet.getString(columnName);
-                    } else if (type == short.class) {
-                        args[i] = resultSet.getShort(columnName);
-                    } else if (type == byte.class) {
-                        args[i] = resultSet.getByte(columnName);
-                    } else if (type == byte[].class) {
-                        args[i] = resultSet.getBytes(columnName);
-                    } else if (type == char.class) {
-                        args[i] = resultSet.getString(columnName).charAt(0);
-                    } else if (type == Date.class) {
-                        args[i] = resultSet.getDate(columnName);
-                    } else if (type == Time.class) {
-                        args[i] = resultSet.getTime(columnName);
-                    } else if (type == Timestamp.class) {
-                        args[i] = resultSet.getTimestamp(columnName);
-                    } else if (type == Blob.class) {
-                        args[i] = resultSet.getBlob(columnName);
-                    } else if (type == Image.class) {
-                        try {
-                            args[i] = ImageIO.read(resultSet.getBinaryStream(columnName));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        args[i] = resultSet.getObject(columnName, type);
-                    }
+
+                for (RecordComponent component : components) {
+                    String columnName = component.getName();
+                    Class<?> type = component.getType();
+                    valueMappers.getOrDefault(type, valueMappers.get(Object.class)).apply(resultSet, columnName);
                 }
 
                 return recordClass.getDeclaredConstructor(Arrays.stream(components)
@@ -170,9 +161,7 @@ public abstract class Database implements AutoCloseable {
             } catch (Exception e) {
                 throw new SQLException("Failed to map record components", e);
             }
-        }
-
-                ;
+        };
     }
 
     public <T> T getSingleObject(ResultSet resultSet, CheckedFunction<ResultSet, T> adapter) {
@@ -252,7 +241,9 @@ public abstract class Database implements AutoCloseable {
      * @return DatabaseResponse
      */
 
-    public abstract DatabaseUpdateResponse executeUpdate(CheckedFunction<Connection, PreparedStatement> query, CheckedFunction<PreparedStatement, Integer> result);
+    public abstract DatabaseUpdateResponse executeUpdate
+    (CheckedFunction<Connection, PreparedStatement> query, CheckedFunction<PreparedStatement, Integer> result)
+    ;
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -270,7 +261,9 @@ public abstract class Database implements AutoCloseable {
      * @param result the result of the query
      * @return DatabaseResponse
      */
-    public abstract DatabaseResultSetResponse executeQuery(CheckedFunction<Connection, PreparedStatement> query, CheckedFunction<PreparedStatement, ResultSet> result);
+    public abstract DatabaseResultSetResponse executeQuery
+    (CheckedFunction<Connection, PreparedStatement> query, CheckedFunction<PreparedStatement, ResultSet> result)
+    ;
 
 
     /**
@@ -280,7 +273,8 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <T> DatabaseObjResponse<T> executeObjQuery(CheckedFunction<Connection, List<T>> adapter);
+    public abstract <
+            T> DatabaseObjResponse<T> executeObjQuery(CheckedFunction<Connection, List<T>> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -291,7 +285,8 @@ public abstract class Database implements AutoCloseable {
      * @return DatabaseResponse
      */
 
-    public abstract <T> DatabaseObjResponse<T> executeObjQuery(CheckedFunction<Connection, ResultSet> query, CheckedFunction<ResultSet, List<T>> result);
+    public abstract <
+            T> DatabaseObjResponse<T> executeObjQuery(CheckedFunction<Connection, ResultSet> query, CheckedFunction<ResultSet, List<T>> result);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -300,7 +295,8 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <T> DatabaseSingleObjResponse<T> executeSingleObjQuery(CheckedFunction<Connection, T> adapter);
+    public abstract <
+            T> DatabaseSingleObjResponse<T> executeSingleObjQuery(CheckedFunction<Connection, T> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -310,7 +306,8 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <T> DatabaseSingleObjResponse<T> executeSingleObjQuery(CheckedFunction<Connection, ResultSet> query, CheckedFunction<ResultSet, T> adapter);
+    public abstract <
+            T> DatabaseSingleObjResponse<T> executeSingleObjQuery(CheckedFunction<Connection, ResultSet> query, CheckedFunction<ResultSet, T> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done
@@ -336,7 +333,8 @@ public abstract class Database implements AutoCloseable {
      * @param result the result of the query
      * @return DatabaseResponse
      */
-    public abstract DatabaseUpdateResponse executeUpdateUnchecked(Function<Connection, PreparedStatement> query, Function<PreparedStatement, Integer> result);
+    public abstract DatabaseUpdateResponse executeUpdateUnchecked
+    (Function<Connection, PreparedStatement> query, Function<PreparedStatement, Integer> result);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done not handle exceptions automatically
@@ -353,7 +351,8 @@ public abstract class Database implements AutoCloseable {
      * @param result the result of the query
      * @return DatabaseResponse
      */
-    public abstract DatabaseResultSetResponse executeQueryUnchecked(Function<Connection, PreparedStatement> query, Function<PreparedStatement, ResultSet> result);
+    public abstract DatabaseResultSetResponse executeQueryUnchecked
+    (Function<Connection, PreparedStatement> query, Function<PreparedStatement, ResultSet> result);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done does not handle exceptions automatically
@@ -362,7 +361,8 @@ public abstract class Database implements AutoCloseable {
      * @param <T>   the type of the object to return
      * @return the result of the query
      */
-    public abstract <T> DatabaseObjResponse<T> executeObjQueryUnchecked(Function<Connection, List<T>> query);
+    public abstract <
+            T> DatabaseObjResponse<T> executeObjQueryUnchecked(Function<Connection, List<T>> query);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done does not handle exceptions automatically
@@ -372,7 +372,8 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <T> DatabaseObjResponse<T> executeObjQueryUnchecked(Function<Connection, ResultSet> query, Function<ResultSet, List<T>> adapter);
+    public abstract <
+            T> DatabaseObjResponse<T> executeObjQueryUnchecked(Function<Connection, ResultSet> query, Function<ResultSet, List<T>> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done does not handle exceptions automatically
@@ -381,7 +382,8 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <T> DatabaseSingleObjResponse<T> executeSingleObjQueryUnchecked(Function<Connection, T> adapter);
+    public abstract <
+            T> DatabaseSingleObjResponse<T> executeSingleObjQueryUnchecked(Function<Connection, T> adapter);
 
     /**
      * Executes the given query with a connection and automatically releases the connection after the query is done does not handle exceptions automatically
@@ -391,7 +393,8 @@ public abstract class Database implements AutoCloseable {
      * @param <T>     the type of the object to return
      * @return the result of the query
      */
-    public abstract <T> DatabaseSingleObjResponse<T> executeSingleObjQueryUnchecked(Function<Connection, ResultSet> query, Function<ResultSet, T> adapter);
+    public abstract <
+            T> DatabaseSingleObjResponse<T> executeSingleObjQueryUnchecked(Function<Connection, ResultSet> query, Function<ResultSet, T> adapter);
 
     /**
      * @return the classloader path
