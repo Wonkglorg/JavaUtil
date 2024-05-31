@@ -1,6 +1,7 @@
 package com.wonkglorg.util.database;
 
 import com.wonkglorg.util.database.datatypes.*;
+import com.wonkglorg.util.database.exceptions.IncorrectTypeConverstionException;
 import com.wonkglorg.util.database.response.*;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
@@ -193,6 +194,8 @@ public abstract class Database implements AutoCloseable {
      */
     protected <T extends Record> CheckedFunction<ResultSet, T> genericRecordAdapter(Class<T> recordClass, boolean useIndex, int offset) {
         return resultSet -> {
+            Class<?> type = null;
+            String columnName = null;
             try {
                 RecordComponent[] components = recordClass.getRecordComponents();
                 Object[] args = new Object[components.length];
@@ -203,8 +206,8 @@ public abstract class Database implements AutoCloseable {
 
                 for (int i = 0; i < components.length; i++) {
                     RecordComponent component = components[i];
-                    String columnName = component.getName();
-                    Class<?> type = component.getType();
+                    columnName = component.getName();
+                    type = component.getType();
                     if (useIndex) {
                         args[i] = dataTypeMapper.getOrDefault(type, new TypeHandlerObject()).getParameter(resultSet, i + 1 + offset);
                     } else {
@@ -214,7 +217,7 @@ public abstract class Database implements AutoCloseable {
 
                 return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
             } catch (Exception e) {
-                throw new SQLException("Failed to map record components", e);
+                throw new IncorrectTypeConverstionException("Failed to map record components: type(" + type + ") referenceName(" + columnName + ")", columnName, type, e);
             }
         };
     }
