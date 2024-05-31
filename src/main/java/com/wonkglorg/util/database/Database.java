@@ -1,7 +1,7 @@
 package com.wonkglorg.util.database;
 
 import com.wonkglorg.util.database.datatypes.*;
-import com.wonkglorg.util.database.exceptions.IncorrectTypeConverstionException;
+import com.wonkglorg.util.database.exceptions.IncorrectTypeConversionException;
 import com.wonkglorg.util.database.response.*;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
@@ -217,7 +217,7 @@ public abstract class Database implements AutoCloseable {
 
                 return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
             } catch (Exception e) {
-                throw new IncorrectTypeConverstionException("Failed to map record components: type(" + type + ") referenceName(" + columnName + ")", columnName, type, e);
+                throw new IncorrectTypeConversionException("Failed to map record components: type(" + type + ") referenceName(" + columnName + ")", columnName, type, e);
             }
         };
     }
