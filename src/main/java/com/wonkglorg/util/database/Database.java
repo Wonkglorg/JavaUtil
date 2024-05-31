@@ -13,11 +13,10 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.RecordComponent;
+import java.sql.Date;
 import java.sql.*;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -159,6 +158,28 @@ public abstract class Database implements AutoCloseable {
         return resultSet -> resultSet.getByte(1);
     }
 
+
+    /**
+     * Naps each row to its matching record class
+     *
+     * @param resultSet the result set to map
+     * @param adapter   the adapter to map the result set to a record
+     * @param <T>       the type of the record
+     * @return the list of records or null if an error occurred
+     */
+    public <T extends Record> List<T> mapRecords(ResultSet resultSet, CheckedFunction<ResultSet, T> adapter) {
+        try {
+            List<T> list = new ArrayList<>();
+            while (resultSet.next()) {
+                list.add(adapter.apply(resultSet));
+            }
+            return list;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     /**
      * Maps a record constructor to its matching sql columns (names MUST match or it will not work)
      * <p/>
@@ -174,11 +195,15 @@ public abstract class Database implements AutoCloseable {
                 RecordComponent[] components = recordClass.getRecordComponents();
                 Object[] args = new Object[components.length];
 
+                if (resultSet == null) {
+                    throw new SQLException("Result set is null");
+                }
 
-                for (RecordComponent component : components) {
+                for (int i = 0; i < components.length; i++) {
+                    RecordComponent component = components[i];
                     String columnName = component.getName();
                     Class<?> type = component.getType();
-                    valueMappers.getOrDefault(type, (result, string) -> resultSet.getObject(columnName, type)).apply(resultSet, columnName);
+                    args[i] = valueMappers.getOrDefault(type, (result, string) -> resultSet.getObject(columnName, type)).apply(resultSet, columnName);
                 }
 
                 return recordClass.getDeclaredConstructor(Arrays.stream(components).map(RecordComponent::getType).toArray(Class<?>[]::new)).newInstance(args);
@@ -202,6 +227,10 @@ public abstract class Database implements AutoCloseable {
             try {
                 RecordComponent[] components = recordClass.getRecordComponents();
                 Object[] args = new Object[components.length];
+
+                if (resultSet == null) {
+                    throw new SQLException("Result set is null");
+                }
 
                 for (int i = 0; i < components.length; i++) {
                     Class<?> type = components[i].getType();
