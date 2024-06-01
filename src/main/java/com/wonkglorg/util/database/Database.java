@@ -216,10 +216,15 @@ public abstract class Database implements AutoCloseable {
                     RecordComponent component = components[i];
                     columnName = component.getName();
                     type = component.getType();
+                    var mappingFunction = dataTypeMapper.get(type);
+                    if (mappingFunction == null) {
+                        throw new NullPointerException("Data type does not have a valid mapping function");
+                    }
+
                     if (useIndex) {
-                        args[i] = dataTypeMapper.getOrDefault(type, new TypeHandlerObject()).getParameter(resultSet, i + 1 + offset);
+                        args[i] = mappingFunction.getParameter(resultSet, i + 1 + offset);
                     } else {
-                        args[i] = dataTypeMapper.getOrDefault(type, new TypeHandlerObject()).getParameter(resultSet, columnName);
+                        args[i] = mappingFunction.getParameter(resultSet, columnName);
                     }
                 }
                 try {
