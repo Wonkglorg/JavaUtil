@@ -37,16 +37,24 @@ public abstract class Database implements AutoCloseable {
     static {
         dataTypeMapper.put(Blob.class, new TypeHandlerBlob());
         dataTypeMapper.put(Boolean.class, new TypeHandlerBoolean());
+        dataTypeMapper.put(boolean.class, new TypeHandlerBoolean());
         dataTypeMapper.put(Byte.class, new TypeHandlerByte());
+        dataTypeMapper.put(byte.class, new TypeHandlerByte());
         dataTypeMapper.put(byte[].class, new TypeHandlerByteArray());
         dataTypeMapper.put(Character.class, new TypeHandlerChar());
+        dataTypeMapper.put(char.class, new TypeHandlerChar());
         dataTypeMapper.put(Date.class, new TypeHandlerDate());
         dataTypeMapper.put(Double.class, new TypeHandlerDouble());
+        dataTypeMapper.put(double.class, new TypeHandlerDouble());
         dataTypeMapper.put(Float.class, new TypeHandlerFloat());
+        dataTypeMapper.put(float.class, new TypeHandlerFloat());
         dataTypeMapper.put(Image.class, new TypeHandlerImage());
         dataTypeMapper.put(Integer.class, new TypeHandlerInteger());
+        dataTypeMapper.put(int.class, new TypeHandlerInteger());
         dataTypeMapper.put(Long.class, new TypeHandlerLong());
+        dataTypeMapper.put(long.class, new TypeHandlerLong());
         dataTypeMapper.put(Short.class, new TypeHandlerShort());
+        dataTypeMapper.put(short.class, new TypeHandlerShort());
         dataTypeMapper.put(String.class, new TypeHandlerString());
         dataTypeMapper.put(Time.class, new TypeHandlerTime());
         dataTypeMapper.put(Timestamp.class, new TypeHandlerTimeStamp());
