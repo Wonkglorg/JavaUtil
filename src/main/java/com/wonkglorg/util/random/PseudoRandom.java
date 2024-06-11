@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @SuppressWarnings("unused")
 public class PseudoRandom {
 
+    //todo:jmd test methods and implement them in the next release
     /**
      * Seed for the random number generator.
      */
@@ -26,7 +27,7 @@ public class PseudoRandom {
      * @return A random color.
      */
     public static Color randomColor() {
-        return new Color(nextRandomByte(), nextRandomByte(), nextRandomByte());
+        return new Color(nextRandomByte((byte) 0, (byte) 255), nextRandomByte((byte) 0, (byte) 255), nextRandomByte((byte) 0, (byte) 255));
     }
 
     /**
@@ -123,8 +124,11 @@ public class PseudoRandom {
      * @return A pseudo-random number in the range [min, max).
      */
     public static byte nextRandomByte(byte min, byte max) {
-        return (byte) (min + (int) ((max - min) * nextRandomDouble()));
+        int range = Byte.toUnsignedInt(max) - Byte.toUnsignedInt(min);
+        int randomValue = (int) (nextRandomDouble() * range);
+        return (byte) (Byte.toUnsignedInt(min) + randomValue);
     }
+
 
     /**
      * Generates a pseudo-random long in the range [min, max).
