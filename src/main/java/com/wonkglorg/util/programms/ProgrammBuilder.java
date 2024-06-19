@@ -4,10 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -92,19 +89,31 @@ public class ProgrammBuilder {
 
     /**
      * Executes the command
+     * <p>
+     * Returns a map with the process and the threads that are running the output streams (if non are specified the thread will wait for the process to finish, (otherwise {@link Process#waitFor()} should be called to ensure the process fully finished,
      */
     public Map.Entry<Process, Map<OutputType, Thread>> execute(Set<OutputType> outputTypes) throws IOException {
-        List<Thread> runningThreads = new ArrayList<>();
         System.out.println("Executing: " + this);
         ProcessBuilder processBuilder = new ProcessBuilder(buildArgumentArray());
         Process process = processBuilder.start();
 
+        HashMap<OutputType, Thread> threadMap = new HashMap<>();
 
-        if (outputTypes != null) {
-            outputTypes.forEach(outputType -> runningThreads.add(startThread(outputType.getInputStream(process), outputType.getAction())));
+
+        if (outputTypes == null || outputTypes.isEmpty()) {
+            try {
+                process.waitFor();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
-        return Map.entry(process, Map.of(OutputType.INFO, runningThreads.get(0), OutputType.ERROR, runningThreads.get(1)));
+        if (!outputTypes.isEmpty()) {
+            for (var outputType : outputTypes) {
+                threadMap.put(outputType, startThread(outputType.getInputStream(process), outputType.getAction()));
+            }
+        }
+        return Map.entry(process, threadMap);
     }
 
     /**
@@ -113,11 +122,11 @@ public class ProgrammBuilder {
      * @param outputTypes
      * @throws IOException
      */
-    public void executeWithoutConsole(Set<OutputType> outputTypes) throws IOException {
+    public void executeWithoutConsole(Set<OutputType> outputTypes) throws IOException, InterruptedException {
         System.out.println("Executing: " + this);
         System.out.println("-----------------------------------------");
         var result = execute(outputTypes);
-        result.getValue().values().forEach(Thread::interrupt);
+        result.getKey().waitFor();
         System.out.println("-----------------------------------------");
     }
 
