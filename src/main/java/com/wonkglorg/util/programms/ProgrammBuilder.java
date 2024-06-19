@@ -106,13 +106,14 @@ public class ProgrammBuilder {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            return null;
         }
 
-        if (!outputTypes.isEmpty()) {
-            for (var outputType : outputTypes) {
-                threadMap.put(outputType, startThread(outputType.getInputStream(process), outputType.getAction()));
-            }
+
+        for (var outputType : outputTypes) {
+            threadMap.put(outputType, startThread(outputType.getInputStream(process), outputType.getAction()));
         }
+
         return Map.entry(process, threadMap);
     }
 
