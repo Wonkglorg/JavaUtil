@@ -4,10 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -15,8 +12,6 @@ import java.util.function.Function;
  * Helper class to build a command line program with parameters and execute them
  */
 public class ProgrammBuilder {
-
-    private final List<Map.Entry<String, String>> parameters = new ArrayList<>();
     private final String programName;
 
     public ProgrammBuilder(ProcessValue processValue, String programName) {
@@ -26,39 +21,16 @@ public class ProgrammBuilder {
         }
     }
 
-    /**
-     * Adds a parameter without a value can be used to add flags or options
-     *
-     * @param key
-     * @return
-     */
-    public ProgrammBuilder put(String key) {
-        parameters.add(Map.entry(key, ""));
-
-        return this;
-    }
-
-    /**
-     * Adds a parameter with a value
-     *
-     * @param key
-     * @param value
-     * @return
-     */
-    public ProgrammBuilder put(String key, String value) {
-        parameters.add(Map.entry(key, value));
-        return this;
-    }
 
     /**
      * Returns an array of strings that can be used as arguments for a ProcessBuilder
      *
      * @return
      */
-    public String[] buildArgumentArray() {
+    public String[] buildArgumentArray(ProgrammString programmString) {
         List<String> list = new ArrayList<>();
         list.add(programName);
-        for (Map.Entry<String, String> entry : parameters) {
+        for (Map.Entry<String, String> entry : programmString.getParameters()) {
             list.add(entry.getKey());
             if (!entry.getValue().isEmpty()) {
                 list.add(entry.getValue());
@@ -75,38 +47,38 @@ public class ProgrammBuilder {
      */
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append(programName);
-        for (Map.Entry<String, String> entry : parameters) {
-            builder.append(" ");
-            builder.append(entry.getKey());
-            if (!entry.getValue().isEmpty()) {
-                builder.append(" ");
-                builder.append(entry.getValue());
-            }
-
-        }
-        return builder.toString();
+        return programName;
     }
 
 
     /**
      * Executes the command
-     *
-     * @param outputTypes The Messages that should be printed to the console (INFO, ERROR)
+     * <p>
+     * Returns a map with the process and the threads that are running the output streams (if non are specified the thread will wait for the process to finish, (otherwise {@link Process#waitFor()} should be called to ensure the process fully finished,
      */
-    public Map.Entry<Process, Map<OutputType, Thread>> execute(Set<OutputType> outputTypes) throws IOException {
-        List<Thread> runningThreads = new ArrayList<>();
+    public Map.Entry<Process, Map<OutputType, Thread>> execute(ProgrammString programmString, Set<OutputType> outputTypes) throws IOException {
         System.out.println("Executing: " + this);
-        ProcessBuilder processBuilder = new ProcessBuilder(buildArgumentArray());
+        ProcessBuilder processBuilder = new ProcessBuilder(buildArgumentArray(programmString));
         Process process = processBuilder.start();
 
+        HashMap<OutputType, Thread> threadMap = new HashMap<>();
 
-        if (outputTypes != null) {
-            outputTypes.forEach(outputType -> runningThreads.add(startThread(outputType.getInputStream(process), outputType.getAction())));
+
+        if (outputTypes == null || outputTypes.isEmpty()) {
+            try {
+                process.waitFor();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            return null;
         }
 
-        return Map.entry(process, Map.of(OutputType.INFO, runningThreads.get(0), OutputType.ERROR, runningThreads.get(1)));
+
+        for (var outputType : outputTypes) {
+            threadMap.put(outputType, startThread(outputType.getInputStream(process), outputType.getAction()));
+        }
+
+        return Map.entry(process, threadMap);
     }
 
     /**
@@ -115,11 +87,11 @@ public class ProgrammBuilder {
      * @param outputTypes
      * @throws IOException
      */
-    public void executeWithoutConsole(Set<OutputType> outputTypes) throws IOException {
+    public void executeWithoutConsole(ProgrammString programmString, Set<OutputType> outputTypes) throws IOException, InterruptedException {
         System.out.println("Executing: " + this);
         System.out.println("-----------------------------------------");
-        var result = execute(outputTypes);
-        result.getValue().values().forEach(Thread::interrupt);
+        var result = execute(programmString, outputTypes);
+        result.getKey().waitFor();
         System.out.println("-----------------------------------------");
     }
 
@@ -145,9 +117,6 @@ public class ProgrammBuilder {
         return thread;
     }
 
-    /**
-     * The type of output that should be printed to the console
-     */
     public enum OutputType {
         INFO(Process::getInputStream, System.out::println), ERROR(Process::getErrorStream, System.err::println);
 
@@ -168,9 +137,6 @@ public class ProgrammBuilder {
         }
     }
 
-    /**
-     * The way the program name is determined
-     */
     public enum ProcessValue {
         /**
          * The program name is taken from the environment variables
