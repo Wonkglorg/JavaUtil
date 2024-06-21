@@ -27,7 +27,7 @@ public class ProgrammBuilder {
     }
 
     /**
-     * Adds a parameter without a value
+     * Adds a parameter without a value can be used to add flags or options
      *
      * @param key
      * @return
@@ -92,6 +92,8 @@ public class ProgrammBuilder {
 
     /**
      * Executes the command
+     *
+     * @param outputTypes The Messages that should be printed to the console (INFO, ERROR)
      */
     public Map.Entry<Process, Map<OutputType, Thread>> execute(Set<OutputType> outputTypes) throws IOException {
         List<Thread> runningThreads = new ArrayList<>();
@@ -143,6 +145,9 @@ public class ProgrammBuilder {
         return thread;
     }
 
+    /**
+     * The type of output that should be printed to the console
+     */
     public enum OutputType {
         INFO(Process::getInputStream, System.out::println), ERROR(Process::getErrorStream, System.err::println);
 
@@ -163,6 +168,9 @@ public class ProgrammBuilder {
         }
     }
 
+    /**
+     * The way the program name is determined
+     */
     public enum ProcessValue {
         /**
          * The program name is taken from the environment variables
