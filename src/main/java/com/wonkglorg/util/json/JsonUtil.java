@@ -1,7 +1,10 @@
 package com.wonkglorg.util.json;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,7 +22,7 @@ public class JsonUtil {
      * @param <T>   the class type
      * @return the populated class
      */
-    public static <T> T fromFile(String path, Class<T> clazz) {
+    public static synchronized <T> T fromFile(String path, Class<T> clazz) {
 
         File file = new File(path);
         if (file.exists()) {
@@ -42,7 +45,7 @@ public class JsonUtil {
      * @param overwrite true to overwrite the file if it exists
      * @return true if the file was written successfully, false if the file already exists and overwrite is false
      */
-    public static boolean toFile(String path, Object object, boolean overwrite) {
+    public static synchronized boolean toFile(String path, Object object, boolean overwrite) {
         try {
             File file = checkFile(path, overwrite);
             if (file == null) {
@@ -64,7 +67,7 @@ public class JsonUtil {
      * @param overwrite  true to overwrite the file if it exists
      * @return true if the file was written successfully, false if the file already exists and overwrite is false
      */
-    public static boolean toFile(String path, String jsonString, boolean overwrite) {
+    public static synchronized boolean toFile(String path, String jsonString, boolean overwrite) {
         try {
             File file = checkFile(path, overwrite);
             if (file == null) {
@@ -86,7 +89,7 @@ public class JsonUtil {
      * @return the file
      * @throws IOException
      */
-    private static File checkFile(String path, boolean overwrite) throws IOException {
+    private static synchronized File checkFile(String path, boolean overwrite) throws IOException {
         File file = new File(path);
         if (!file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
             throw new IOException("Unable to create directories for file: " + file.getParentFile());
@@ -107,7 +110,7 @@ public class JsonUtil {
      * @param object the object to convert
      * @return the JSON string
      */
-    public static String toJsonString(Object object) {
+    public static synchronized String toJsonString(Object object) {
         try {
             return objectMapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
@@ -115,4 +118,40 @@ public class JsonUtil {
         }
     }
 
+    /**
+     * Registers a module to the object mapper
+     *
+     * @param module the module to register
+     */
+    public static synchronized void registerModule(SimpleModule module) {
+        objectMapper.registerModule(module);
+    }
+
+    /**
+     * Registers a module to the object mapper
+     *
+     * @param module the module to register
+     */
+    public static synchronized void registerModule(com.fasterxml.jackson.databind.Module module) {
+        objectMapper.registerModule(module);
+    }
+
+    /**
+     * Registers a serializer and deserializer for a class
+     *
+     * @param serializer
+     * @param deserializer
+     * @param clazz
+     * @param <T>
+     */
+    public static synchronized <T> void registerModule(JsonSerializer<T> serializer, JsonDeserializer<T> deserializer, Class<T> clazz) {
+        SimpleModule module = new SimpleModule();
+        module.addSerializer(clazz, serializer);
+        module.addDeserializer(clazz, deserializer);
+        objectMapper.registerModule(module);
+    }
+
+    public static synchronized ObjectMapper getObjectMapper() {
+        return objectMapper;
+    }
 }
