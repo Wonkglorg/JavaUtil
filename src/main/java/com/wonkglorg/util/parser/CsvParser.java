@@ -1,4 +1,4 @@
-package com.wonkglorg.util.csv;
+package com.wonkglorg.util.parser;
 
 import org.jetbrains.annotations.NotNull;
 

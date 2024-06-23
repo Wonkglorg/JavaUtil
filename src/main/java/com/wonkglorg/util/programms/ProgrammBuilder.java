@@ -14,40 +14,30 @@ import java.util.function.Function;
 public class ProgrammBuilder {
     private final String programName;
 
+    /**
+     * Constructs a new ProgrammBuilder
+     *
+     * @param processValue The value to use for the program name
+     * @param programName  The name of the program
+     */
     public ProgrammBuilder(ProcessValue processValue, String programName) {
-        switch (processValue) {
-            case ENVIROMENT -> this.programName = System.getenv(programName);
-            default -> this.programName = programName;
+        if (Objects.requireNonNull(processValue) == ProcessValue.ENVIROMENT) {
+            this.programName = System.getenv(programName);
+        } else {
+            this.programName = programName;
         }
     }
-
 
     /**
      * Returns an array of strings that can be used as arguments for a ProcessBuilder
      *
-     * @return
+     * @return prepends the program name to the arguments
      */
-    public String[] buildArgumentArray(ProgrammString programmString) {
+    public String[] buildArgumentArray(String[] programmString) {
         List<String> list = new ArrayList<>();
         list.add(programName);
-        for (Map.Entry<String, String> entry : programmString.getParameters()) {
-            list.add(entry.getKey());
-            if (!entry.getValue().isEmpty()) {
-                list.add(entry.getValue());
-            }
-        }
+        list.addAll(Arrays.asList(programmString));
         return list.toArray(new String[0]);
-    }
-
-
-    /**
-     * Returns a user-friendly string representation
-     *
-     * @return
-     */
-    @Override
-    public String toString() {
-        return programName;
     }
 
 
@@ -56,9 +46,9 @@ public class ProgrammBuilder {
      * <p>
      * Returns a map with the process and the threads that are running the output streams (if non are specified the thread will wait for the process to finish, (otherwise {@link Process#waitFor()} should be called to ensure the process fully finished,
      */
-    public Map.Entry<Process, Map<OutputType, Thread>> execute(ProgrammString programmString, Set<OutputType> outputTypes) throws IOException {
+    public Map.Entry<Process, Map<OutputType, Thread>> execute(String[] arguments, Set<OutputType> outputTypes) throws IOException {
         System.out.println("Executing: " + this);
-        ProcessBuilder processBuilder = new ProcessBuilder(buildArgumentArray(programmString));
+        ProcessBuilder processBuilder = new ProcessBuilder(buildArgumentArray(arguments));
         Process process = processBuilder.start();
 
         HashMap<OutputType, Thread> threadMap = new HashMap<>();
@@ -87,10 +77,10 @@ public class ProgrammBuilder {
      * @param outputTypes
      * @throws IOException
      */
-    public void executeWithoutConsole(ProgrammString programmString, Set<OutputType> outputTypes) throws IOException, InterruptedException {
+    public void executeWithoutConsole(String[] arguments, Set<OutputType> outputTypes) throws IOException, InterruptedException {
         System.out.println("Executing: " + this);
         System.out.println("-----------------------------------------");
-        var result = execute(programmString, outputTypes);
+        var result = execute(arguments, outputTypes);
         result.getKey().waitFor();
         System.out.println("-----------------------------------------");
     }
@@ -148,5 +138,16 @@ public class ProgrammBuilder {
          */
         PATH;
 
+    }
+
+
+    /**
+     * Returns a user-friendly string representation
+     *
+     * @return
+     */
+    @Override
+    public String toString() {
+        return programName;
     }
 }
