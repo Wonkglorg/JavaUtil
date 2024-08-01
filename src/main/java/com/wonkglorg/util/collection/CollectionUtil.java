@@ -41,7 +41,9 @@ public class CollectionUtil {
 	 * @return a unique key represented by the required values
 	 */
 	private static <T> String generateKey(T row, Function<T, Object>[] fields) {
-		return Arrays.stream(fields).map(f -> f.apply(row).toString()).collect(Collectors.joining(
-				"-"));
+		return Arrays.stream(fields).map(f -> {
+			Object value = f.apply(row);
+			return value != null ? value.toString() : "null";
+		}).collect(Collectors.joining("-"));
 	}
 }
