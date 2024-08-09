@@ -24,7 +24,7 @@ public class TestTimings {
 
 	}
 
-	private TimingReport time(List<RunFunction> functions) {
+	private List<TimingReport> time(List<RunFunction> functions) {
 
 		Map<String, TimingReport> reports = new HashMap<>();
 
@@ -32,6 +32,8 @@ public class TestTimings {
 			if (runFunction.function instanceof Function<?, ?> function) {
 				reports.put(runFunction.name, time(function, runFunction.objects));
 			}
+			//todo:jmd if its not a valid function return an empty Time report stating its not a runnable executeable
+			// otherwise return a list of all reports in order then have a static method to format all time reports
 		}
 
 	}

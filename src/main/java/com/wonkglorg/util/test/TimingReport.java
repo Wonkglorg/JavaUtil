@@ -2,6 +2,7 @@ package com.wonkglorg.util.test;
 
 import com.wonkglorg.util.string.StringUtils;
 
+import java.util.List;
 import java.util.Map;
 
 public class TimingReport {
@@ -38,6 +39,10 @@ public class TimingReport {
 
 	public long getTotalDuration() {
 		return timings.values().stream().mapToLong(Timing::duration).sum();
+	}
+
+	public static void printTimeReport(List<TimingReport> reports) {
+		//todo:jmd implement
 	}
 
 	public record Timing(long iteration, long duration) {
