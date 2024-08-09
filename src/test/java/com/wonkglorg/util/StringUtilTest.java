@@ -4,9 +4,7 @@ import com.wonkglorg.util.string.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.BiFunction;
+import java.nio.file.Files;
 
 
 class StringUtilTest {
@@ -120,7 +118,6 @@ class StringUtilTest {
 
 	@Test
 	void doesXWork() {
-
 
 	}
 

@@ -196,6 +196,19 @@ public class StringUtils {
 	}
 
 	/**
+	 * Wraps a string with a character
+	 * <br>
+	 * Example: wrap("Hello", '*') -> "*Hello*"
+	 *
+	 * @param str The string to wrap
+	 * @param wrapWith The string to wrap str with
+	 * @return The wrapped string
+	 */
+	public static String wrap(@Nullable String str, char wrapWith) {
+		return wrapWith + str + wrapWith;
+	}
+
+	/**
 	 * Removes all leading characters from a string
 	 *
 	 * @param str The string to remove the leading characters from
@@ -211,19 +224,6 @@ public class StringUtils {
 			i++;
 		}
 		return str.substring(i);
-	}
-
-	/**
-	 * Wraps a string with a character
-	 * <br>
-	 * Example: wrap("Hello", '*') -> "*Hello*"
-	 *
-	 * @param str The string to wrap
-	 * @param wrapWith The string to wrap str with
-	 * @return The wrapped string
-	 */
-	public static String wrap(@Nullable String str, char wrapWith) {
-		return wrapWith + str + wrapWith;
 	}
 
 	/**
@@ -410,16 +410,14 @@ public class StringUtils {
 					if (!currentLine.isEmpty()) {
 						currentLine.append(' ');
 					}
-					currentLine.append(currentWord);
-					currentWord.setLength(0);
 				} else {
 
 					result.add(currentLine.toString());
 					currentLine.setLength(0);
 
-					currentLine.append(currentWord);
-					currentWord.setLength(0);
 				}
+				currentLine.append(currentWord);
+				currentWord.setLength(0);
 			} else {
 				currentWord.append(ch);
 			}
