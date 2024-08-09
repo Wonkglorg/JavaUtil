@@ -3,6 +3,7 @@ package com.wonkglorg.util.test;
 import com.wonkglorg.util.interfaces.functional.TriConsumer;
 import com.wonkglorg.util.interfaces.functional.TriFunction;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,18 +25,49 @@ public class TestTimings {
 
 	}
 
-	private List<TimingReport> time(List<RunFunction> functions) {
+	private List<TimingReport> time(List<RunFunction> functions, long repeats) {
 
-		Map<String, TimingReport> reports = new HashMap<>();
+		List<TimingReport> reports = new ArrayList<>();
 
 		for (RunFunction runFunction : functions) {
+
 			if (runFunction.function instanceof Function<?, ?> function) {
-				reports.put(runFunction.name, time(function, runFunction.objects));
+				reports.add(time(runFunction.name, (Function<Object, Object>) function, repeats,
+						runFunction.objects));
 			}
-			//todo:jmd if its not a valid function return an empty Time report stating its not a runnable executeable
-			// otherwise return a list of all reports in order then have a static method to format all time reports
+
+			if (runFunction.function instanceof BiFunction<?, ?, ?> function) {
+				reports.add(time(runFunction.name, (BiFunction<Object, Object, Object>) function, repeats,
+						runFunction.objects));
+			}
+
+			if (runFunction.function instanceof TriFunction<?, ?, ?, ?> function) {
+				reports.add(
+						time(runFunction.name, (TriFunction<Object, Object, Object, Object>) function, repeats,
+								runFunction.objects));
+			}
+
+			if (runFunction.function instanceof Consumer<?> function) {
+				reports.add(
+						time(runFunction.name, (Consumer<Object>) function, repeats, runFunction.objects));
+			}
+
+			if (runFunction.function instanceof BiConsumer<?, ?> function) {
+				reports.add(time(runFunction.name, (BiConsumer<Object, Object>) function, repeats,
+						runFunction.objects));
+			}
+
+			if (runFunction.function instanceof TriConsumer<?, ?, ?> function) {
+				reports.add(time(runFunction.name, (TriConsumer<Object, Object, Object>) function, repeats,
+						runFunction.objects));
+			}
+
+			if (runFunction.function instanceof Supplier<?> function) {
+				reports.add(timerWild(runFunction.name, (Supplier<Object>) function, repeats));
+			}
 		}
 
+		return reports;
 	}
 
 
@@ -60,13 +92,29 @@ public class TestTimings {
 		return new TimingReport(name, map);
 	}
 
+	private TimingReport time(String name, Function<Object, Object> function, long repeats,
+			Object[] objects) {
+		return timeFunctionBase(name, args -> function.apply(args[0]), repeats, objects);
+	}
+
 	public static <T, R> TimingReport time(String name, Function<T, R> function, T t, long repeats) {
 		return timeFunctionBase(name, args -> function.apply((T) args[0]), repeats, t);
+	}
+
+	private TimingReport time(String name, BiFunction<Object, Object, Object> function, long repeats,
+			Object[] objects) {
+		return timeFunctionBase(name, args -> function.apply(args[0], args[1]), repeats, objects);
 	}
 
 	public static <T, U, R> TimingReport time(String name, BiFunction<T, U, R> function, T t, U u,
 			long repeats) {
 		return timeFunctionBase(name, args -> function.apply((T) args[0], (U) args[1]), repeats, t, u);
+	}
+
+	private TimingReport time(String name, TriFunction<Object, Object, Object, Object> function,
+			long repeats, Object[] objects) {
+		return timeFunctionBase(name, args -> function.apply(args[0], args[1], args[2]), repeats,
+				objects);
 	}
 
 	public static <T, U, V, R> TimingReport time(String name, TriFunction<T, U, V, R> function, T t,
@@ -75,8 +123,18 @@ public class TestTimings {
 				repeats, t, u, v);
 	}
 
+	private TimingReport time(String name, Consumer<Object> function, long repeats,
+			Object[] objects) {
+		return timeConsumerBase(name, args -> function.accept(args[0]), repeats, objects);
+	}
+
 	public static <T> TimingReport time(String name, Consumer<T> consumer, T t, long repeats) {
 		return timeConsumerBase(name, args -> consumer.accept((T) args[0]), repeats, t);
+	}
+
+	private TimingReport time(String name, BiConsumer<Object, Object> function, long repeats,
+			Object[] objects) {
+		return timeConsumerBase(name, args -> function.accept(args[0], args[1]), repeats, objects);
 	}
 
 	public static <T, U> TimingReport time(String name, BiConsumer<T, U> consumer, T t, U u,
@@ -85,10 +143,21 @@ public class TestTimings {
 				u);
 	}
 
+	private TimingReport time(String name, TriConsumer<Object, Object, Object> function,
+			long repeats,
+			Object[] objects) {
+		return timeConsumerBase(name, args -> function.accept(args[0], args[1], args[2]), repeats,
+				objects);
+	}
+
 	public static <T, U, V> TimingReport time(String name, TriConsumer<T, U, V> consumer, T t, U u,
 			V v, long repeats) {
 		return timeConsumerBase(name, args -> consumer.accept((T) args[0], (U) args[1], (V) args[2]),
 				repeats, t, u, v);
+	}
+
+	private TimingReport timerWild(String name, Supplier<Object> function, long repeats) {
+		return timeConsumerBase(name, args -> function.get(), repeats);
 	}
 
 	public static <T> TimingReport time(String name, Supplier<T> producer, long repeats) {
