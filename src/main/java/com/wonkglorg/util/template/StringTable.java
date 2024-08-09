@@ -15,7 +15,7 @@ public class StringTable {
 		//todo:jmd get all fields with reflection and display them in a table.
 
 		var record = records.get(0);
-		Reflection
+	//	Reflection
 
 
 	}

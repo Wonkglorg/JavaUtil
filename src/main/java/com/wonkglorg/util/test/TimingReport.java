@@ -36,19 +36,24 @@ public class TimingReport {
 		return timings.values().stream().mapToLong(Timing::duration).max().getAsLong();
 	}
 
+	public long getTotalDuration() {
+		return timings.values().stream().mapToLong(Timing::duration).sum();
+	}
+
 	public record Timing(long iteration, long duration) {
 	}
 
 
-	public void printReport(){
+	public void printReport() {
 		//todo:jmd create class to format record values easier.
 	}
 
 
 	@Override
 	public String toString() {
-		return StringUtils.format("TimingReport{name={0}, min={1}, average={2}, max={3}, timings={4}}",
-				name, getShortestExecutionTime(), getAverageExecutionTime(), getLongestExecutionTime(),
-				timings);
+		return StringUtils.format(
+				"TimingReport{name={0}, min={1}, average={2}, max={3}, duration={4}, timings={5}}", name,
+				getShortestExecutionTime(), getAverageExecutionTime(), getLongestExecutionTime(),
+				getTotalDuration(), timings);
 	}
 }

@@ -1,18 +1,18 @@
 package com.wonkglorg.util.interfaces.functional.checked;
 
-import com.wonkglorg.util.interfaces.functional.BiSupplier;
+import java.util.function.Supplier;
 
 @SuppressWarnings("unused")
 @FunctionalInterface
-public interface CheckedProducer<T> extends BiSupplier<T> {
-    T getChecked() throws Exception;
+public interface CheckedProducer<T> extends Supplier<T> {
+	T getChecked() throws Exception;
 
-    @Override
-    default T get() {
-        try {
-            return getChecked();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+	@Override
+	default T get() {
+		try {
+			return getChecked();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 }

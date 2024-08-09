@@ -1,10 +1,10 @@
 package com.wonkglorg.util.test;
 
-import com.wonkglorg.util.interfaces.functional.BiSupplier;
 import com.wonkglorg.util.interfaces.functional.TriConsumer;
 import com.wonkglorg.util.interfaces.functional.TriFunction;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -16,17 +16,38 @@ import java.util.function.Supplier;
 public class TestTimings {
 
 
-	private static <R> TimingReport timeFunctionBase(Function<Object[], R> function, long repeats,
-			Object... args) {
+	//todo:jmd add a way to test multiple files against eachother? with a report on the results how
+	// they match up
+	//perhaps with a check what type it is?
+
+	private record RunFunction(String name, Object function, Object... objects) {
+
+	}
+
+	private TimingReport time(List<RunFunction> functions) {
+
+		Map<String, TimingReport> reports = new HashMap<>();
+
+		for (RunFunction runFunction : functions) {
+			if (runFunction.function instanceof Function<?, ?> function) {
+				reports.put(runFunction.name, time(function, runFunction.objects));
+			}
+		}
+
+	}
+
+
+	private static <R> TimingReport timeFunctionBase(String name, Function<Object[], R> function,
+			long repeats, Object... args) {
 		Map<Long, TimingReport.Timing> map = new HashMap<>();
 		for (long i = 0; i < repeats; i++) {
 			map.put(i, timerBase(() -> function.apply(args), i));
 		}
-		return new TimingReport("", map);
+		return new TimingReport(name, map);
 	}
 
-	private static TimingReport timeConsumerBase(Consumer<Object[]> function, long repeats,
-			Object... args) {
+	private static TimingReport timeConsumerBase(String name, Consumer<Object[]> function,
+			long repeats, Object... args) {
 		Map<Long, TimingReport.Timing> map = new HashMap<>();
 		for (long i = 0; i < repeats; i++) {
 			map.put(i, timerBase(() -> {
@@ -34,43 +55,45 @@ public class TestTimings {
 				return null;
 			}, i));
 		}
-		return new TimingReport("", map);
+		return new TimingReport(name, map);
 	}
 
-	public static <T, R> TimingReport time(Function<T, R> function, T t, long repeats) {
-		return timeFunctionBase(args -> function.apply((T) args[0]), repeats, t);
+	public static <T, R> TimingReport time(String name, Function<T, R> function, T t, long repeats) {
+		return timeFunctionBase(name, args -> function.apply((T) args[0]), repeats, t);
 	}
 
-	public static <T, U, R> TimingReport time(BiFunction<T, U, R> function, T t, U u, long repeats) {
-		return timeFunctionBase(args -> function.apply((T) args[0], (U) args[1]), repeats, t, u);
-	}
-
-	public static <T, U, V, R> TimingReport time(TriFunction<T, U, V, R> function, T t, U u, V v,
+	public static <T, U, R> TimingReport time(String name, BiFunction<T, U, R> function, T t, U u,
 			long repeats) {
-		return timeFunctionBase(args -> function.apply((T) args[0], (U) args[1], (V) args[2]), repeats,
-				t, u, v);
+		return timeFunctionBase(name, args -> function.apply((T) args[0], (U) args[1]), repeats, t, u);
 	}
 
-	public static <T> TimingReport time(Consumer<T> consumer, T t, long repeats) {
-		return timeConsumerBase(args -> consumer.accept((T) args[0]), repeats, t);
+	public static <T, U, V, R> TimingReport time(String name, TriFunction<T, U, V, R> function, T t,
+			U u, V v, long repeats) {
+		return timeFunctionBase(name, args -> function.apply((T) args[0], (U) args[1], (V) args[2]),
+				repeats, t, u, v);
 	}
 
-	public static <T, U> TimingReport time(BiConsumer<T, U> consumer, T t, U u, long repeats) {
-		return timeConsumerBase(args -> consumer.accept((T) args[0], (U) args[1]), repeats, t, u);
+	public static <T> TimingReport time(String name, Consumer<T> consumer, T t, long repeats) {
+		return timeConsumerBase(name, args -> consumer.accept((T) args[0]), repeats, t);
 	}
 
-	public static <T, U, V> TimingReport time(TriConsumer<T, U, V> consumer, T t, U u, V v,
+	public static <T, U> TimingReport time(String name, BiConsumer<T, U> consumer, T t, U u,
 			long repeats) {
-		return timeConsumerBase(args -> consumer.accept((T) args[0], (U) args[1], (V) args[2]),
-				repeats,
-				t, u, v);
+		return timeConsumerBase(name, args -> consumer.accept((T) args[0], (U) args[1]), repeats, t,
+				u);
 	}
 
-	public static <T> TimingReport time(Supplier<T> producer, long repeats) {
-		return timeConsumerBase(args -> producer.get(), repeats);
+	public static <T, U, V> TimingReport time(String name, TriConsumer<T, U, V> consumer, T t, U u,
+			V v, long repeats) {
+		return timeConsumerBase(name, args -> consumer.accept((T) args[0], (U) args[1], (V) args[2]),
+				repeats, t, u, v);
 	}
 
-	private static <R> TimingReport.Timing timerBase(BiSupplier<R> function, long iteration) {
+	public static <T> TimingReport time(String name, Supplier<T> producer, long repeats) {
+		return timeConsumerBase(name, args -> producer.get(), repeats);
+	}
+
+	private static <R> TimingReport.Timing timerBase(Supplier<R> function, long iteration) {
 		long start = System.currentTimeMillis();
 		R ignored = function.get();
 		long end = System.currentTimeMillis();
