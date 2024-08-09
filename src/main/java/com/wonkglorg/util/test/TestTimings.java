@@ -80,6 +80,7 @@ public class TestTimings {
 		return new TimingReport(name, map);
 	}
 
+	//todo:jmd add checks and better returns for errors, to showcase what elements would be invalid etc
 	private static TimingReport timeConsumerBase(String name, Consumer<Object[]> function,
 			long repeats, Object... args) {
 		Map<Long, TimingReport.Timing> map = new HashMap<>();
