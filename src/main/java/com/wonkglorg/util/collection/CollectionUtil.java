@@ -1,10 +1,11 @@
 package com.wonkglorg.util.collection;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -18,19 +19,35 @@ public class CollectionUtil {
 	 * Removes duplicates from a Collection of values based on provided fields
 	 *
 	 * @param rows the rows to check
+	 * @param merge behaviour when encountering duplicates
 	 * @param fields the fields that should be unique
 	 * @return a list representing the unique values
 	 */
 	@SafeVarargs
-	public static <T> Set<T> reduceDuplicates(Collection<T> rows, Function<T, Object>... fields) {
+	private <T> List<T> reduceDuplicates(Collection<T> rows, BinaryOperator<T> merge,
+			Function<T, Object>... fields) {
 		if (rows == null) {
-			return Set.of();
+			return List.of();
 		}
-		Map<String, T> uniqueEntries = rows.stream().collect(
-				Collectors.toMap(row -> generateKey(row, fields), row -> row,
-						(existing, replacement) -> existing));
 
-		return new HashSet<>(uniqueEntries.values());
+		Map<String, T> uniqueEntries =
+				rows.stream().collect(Collectors.toMap(row -> generateKey(row, fields), row -> row,
+						merge));
+
+		return new ArrayList<>(uniqueEntries.values());
+	}
+
+	/**
+	 * Removes duplicates from a Collection of values based on provided fields keeps the first
+	 * instance found and discards all other duplicates
+	 *
+	 * @param rows the rows to check
+	 * @param fields the fields that should be unique
+	 * @return a list representing the unique values
+	 */
+	@SafeVarargs
+	private <T> List<T> reduceDuplicates(Collection<T> rows, Function<T, Object>... fields) {
+		return reduceDuplicates(rows, (existing, replacement) -> existing, fields);
 	}
 
 	/**
