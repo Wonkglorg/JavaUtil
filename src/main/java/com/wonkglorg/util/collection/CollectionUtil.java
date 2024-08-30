@@ -21,13 +21,17 @@ public class CollectionUtil {
 	 * @param rows the rows to check
 	 * @param merge behaviour when encountering duplicates
 	 * @param fields the fields that should be unique
-	 * @return a list representing the unique values
+	 * @return a list representing the unique values (if no fields are selected return all elements)
 	 */
 	@SafeVarargs
-	private <T> List<T> reduceDuplicates(Collection<T> rows, BinaryOperator<T> merge,
+	public static <T> List<T> reduceDuplicates(Collection<T> rows, BinaryOperator<T> merge,
 			Function<T, Object>... fields) {
 		if (rows == null) {
 			return List.of();
+		}
+
+		if (fields == null || fields.length == 0) {
+			return new ArrayList<>(rows);
 		}
 
 		Map<String, T> uniqueEntries =
@@ -43,10 +47,10 @@ public class CollectionUtil {
 	 *
 	 * @param rows the rows to check
 	 * @param fields the fields that should be unique
-	 * @return a list representing the unique values
+	 * @return a list representing the unique values  (if no fields are selected return all elements)
 	 */
 	@SafeVarargs
-	private <T> List<T> reduceDuplicates(Collection<T> rows, Function<T, Object>... fields) {
+	public static <T> List<T> reduceDuplicates(Collection<T> rows, Function<T, Object>... fields) {
 		return reduceDuplicates(rows, (existing, replacement) -> existing, fields);
 	}
 

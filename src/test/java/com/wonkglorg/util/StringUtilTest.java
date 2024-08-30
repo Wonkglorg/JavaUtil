@@ -4,9 +4,6 @@ import com.wonkglorg.util.string.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.nio.file.Files;
-
-
 class StringUtilTest {
 
 	@Test
