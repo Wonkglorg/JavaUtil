@@ -166,9 +166,9 @@ public class TestTimings {
 	}
 
 	private static <R> TimingReport.Timing timerBase(Supplier<R> function, long iteration) {
-		long start = System.currentTimeMillis();
+		long start = System.nanoTime();
 		R ignored = function.get();
-		long end = System.currentTimeMillis();
+		long end = System.nanoTime();
 		return new TimingReport.Timing(iteration, end - start);
 	}
 

@@ -46,6 +46,10 @@ public class TimingReport {
 	}
 
 	public record Timing(long iteration, long duration) {
+		@Override
+		public String toString() {
+			return StringUtils.format("Timing{iteration={0}ns, duration={1}ns", iteration, duration);
+		}
 	}
 
 
@@ -57,8 +61,8 @@ public class TimingReport {
 	@Override
 	public String toString() {
 		return StringUtils.format(
-				"TimingReport{name={0}, min={1}, average={2}, max={3}, duration={4}, timings={5}}", name,
-				getShortestExecutionTime(), getAverageExecutionTime(), getLongestExecutionTime(),
+				"TimingReport{name={0}, min={1}ns, average={2}ns, max={3}ns, duration={4}ns, timings={5}}",
+				name, getShortestExecutionTime(), getAverageExecutionTime(), getLongestExecutionTime(),
 				getTotalDuration(), timings);
 	}
 }

@@ -101,31 +101,6 @@ public final class Random {
 	 * @return list of elements picked from the provided Collection
 	 */
 	public static <T> List<T> randomElement(final List<T> elements, int count, boolean unique) {
-		if (elements == null) {
-			return List.of();
-		}
-		List<T> elementEntries = new ArrayList<>(elements);
-
-		if (elementEntries.isEmpty()) {
-			return List.of();
-		}
-
-		if (unique) {
-			Collections.shuffle(elementEntries);
-			if (elementEntries.size() <= count) {
-				return elementEntries;
-			}
-			return new ArrayList<>(elementEntries.subList(0, count));
-		}
-		List<T> outputElements = new ArrayList<>(count);
-		while (outputElements.size() < count) {
-			outputElements.add(elementEntries.get(PseudoRandom.nextRandomInt(0, elementEntries.size())));
-		}
-
-		return outputElements;
-	}
-
-	public static <T> List<T> randomElement2(final List<T> elements, int count, boolean unique) {
 		if (elements == null || elements.isEmpty() || count <= 0) {
 			return Collections.emptyList();
 		}
