@@ -2,10 +2,16 @@ package com.wonkglorg.util.database;
 
 import com.wonkglorg.util.database.datatypes.*;
 import com.wonkglorg.util.database.exceptions.IncorrectTypeConversionException;
-import com.wonkglorg.util.database.response.*;
+import com.wonkglorg.util.database.response.DatabaseObjResponse;
+import com.wonkglorg.util.database.response.DatabaseResponse;
+import com.wonkglorg.util.database.response.DatabaseResultSetResponse;
+import com.wonkglorg.util.database.response.DatabaseSingleObjResponse;
+import com.wonkglorg.util.database.response.DatabaseUpdateResponse;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedConsumer;
 import com.wonkglorg.util.interfaces.functional.checked.CheckedFunction;
 import com.wonkglorg.util.interfaces.functional.database.DataTypeHandler;
+import com.wonkglorg.util.ip.IPv4;
+import com.wonkglorg.util.ip.IPv6;
 import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.ImageIO;
@@ -14,10 +20,20 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.RecordComponent;
+import java.sql.Blob;
+import java.sql.Connection;
 import java.sql.Date;
-import java.sql.*;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -58,6 +74,8 @@ public abstract class Database implements AutoCloseable {
         dataTypeMapper.put(String.class, new TypeHandlerString());
         dataTypeMapper.put(Time.class, new TypeHandlerTime());
         dataTypeMapper.put(Timestamp.class, new TypeHandlerTimeStamp());
+        dataTypeMapper.put(IPv4.class,new TypeHandlerIpv4());
+        dataTypeMapper.put(IPv6.class,new TypeHandlerIpv6());
     }
 
 

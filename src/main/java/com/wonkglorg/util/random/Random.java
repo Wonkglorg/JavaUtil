@@ -12,6 +12,9 @@ import java.util.concurrent.ThreadLocalRandom;
 @SuppressWarnings("unused")
 public final class Random {
 
+	private Random() {
+	}
+
 	/**
 	 * Returns an Integer between a and b
 	 *
