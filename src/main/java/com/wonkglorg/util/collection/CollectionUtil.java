@@ -55,7 +55,7 @@ public class CollectionUtil {
 	}
 
 	/**
-	 * Generates a unique key for the {@link #reduceDuplicates(Collection, Function[])}method}
+	 * Generates a unique key for the {@link #reduceDuplicates(Collection, Function[])}
 	 *
 	 * @param row the object to generate a key for
 	 * @param fields the fields to validate uniqueness for

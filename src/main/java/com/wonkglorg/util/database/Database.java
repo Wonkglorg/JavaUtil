@@ -213,9 +213,9 @@ public abstract class Database implements AutoCloseable {
 
 
 	/**
-	 * Maps a record constructor to its matching sql columns (names MUST match or it will not work)
+	 * Maps a record constructor to its matching sql columns (names MUST match, or it will not work)
 	 * <p/>
-	 * If any of the record columns do not have a adapter mapped a custom can be added / overwritten
+	 * If any of the record columns do not have an adapter mapped a custom can be added / overwritten
 	 * with {@link #addDataMapper(Class, DataTypeHandler)}
 	 *
 	 * @param recordClass the record class to map
@@ -270,9 +270,9 @@ public abstract class Database implements AutoCloseable {
 	}
 
 	/**
-	 * Maps a record constructor to its matching sql columns (names MUST match or it will not work)
+	 * Maps a record constructor to its matching sql columns (names MUST match, or it will not work)
 	 * <p/>
-	 * If any of the record columns do not have a adapter mapped a custom can be added / overwritten
+	 * If any of the record columns do not have an adapter mapped a custom can be added / overwritten
 	 * with {@link #addDataMapper(Class, DataTypeHandler)}
 	 *
 	 * @param recordClass the record class to map
@@ -287,7 +287,7 @@ public abstract class Database implements AutoCloseable {
 	 * Maps a record constructor to its matching sql columns (in index order constructor must match
 	 * the order)
 	 * <p/>
-	 * If any of the record columns do not have a adapter mapped a custom can be added / overwritten
+	 * If any of the record columns do not have an adapter mapped a custom can be added / overwritten
 	 * with {@link #addDataMapper(Class, DataTypeHandler)}
 	 *
 	 * @param recordClass the record class to map
@@ -332,7 +332,7 @@ public abstract class Database implements AutoCloseable {
 	/**
 	 * Checks the current database the connection is connected to
 	 *
-	 * @return
+	 * @return Gets the name of the database currently connected to
 	 */
 	public String checkCurrentDatabase(Connection connection) {
 
@@ -574,7 +574,7 @@ public abstract class Database implements AutoCloseable {
 
 	/**
 	 * Adds a data mapper function used in {@link #recordAdapter(Class)}
-	 * and{@link #recordIndexAdapter(Class, int)} (Class)} to map records to the correct type
+	 * and{@link #recordIndexAdapter(Class, int)} to map records to the correct type
 	 *
 	 * @param type the type to map
 	 * @param handler mapper function

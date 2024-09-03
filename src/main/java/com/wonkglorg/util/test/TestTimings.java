@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "unused"})
 public class TestTimings {
 
 
@@ -23,6 +23,7 @@ public class TestTimings {
 
 	private record RunFunction(String name, Object function, Object... objects) {
 	}
+
 
 	private List<TimingReport> time(List<RunFunction> functions, long repeats) {
 
@@ -79,7 +80,8 @@ public class TestTimings {
 		return new TimingReport(name, map);
 	}
 
-	//todo:jmd add checks and better returns for errors, to showcase what elements would be invalid etc
+	//todo:jmd add checks and better returns for errors, to showcase what elements would be invalid
+	// etc
 	private static TimingReport timeConsumerBase(String name, Consumer<Object[]> function,
 			long repeats, Object... args) {
 		Map<Long, TimingReport.Timing> map = new HashMap<>();

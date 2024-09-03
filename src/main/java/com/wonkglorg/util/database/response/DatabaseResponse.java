@@ -1,5 +1,6 @@
 package com.wonkglorg.util.database.response;
 
+@SuppressWarnings("unused")
 public class DatabaseResponse {
     private final Exception exception;
 
