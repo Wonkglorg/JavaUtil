@@ -3,6 +3,7 @@ package com.wonkglorg.util.ip;
 import com.wonkglorg.util.string.StringUtils;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.wonkglorg.util.string.StringUtils.format;
@@ -17,11 +18,14 @@ public class IPv6 extends IP<IPv6> {
 	public static final IPv6 Max =
 			new IPv6(new String[]{"ffff", "ffff", "ffff", "ffff", "ffff", "ffff", "ffff", "ffff"});
 	private String[] ip = new String[8];
+	private String ipShortenedText = null;
+	private final String ipText;
 
-	private static final String ipErrorMessage = "Invalid IP format";
 
 	private IPv6(String[] ip) {
-		this.ip = ip;
+		List<String> ipParts = Arrays.stream(ip).map(String::toLowerCase).toList();
+		this.ip = ipParts.toArray(new String[0]);
+		this.ipText = String.join(":", ipParts);
 	}
 
 
@@ -218,37 +222,70 @@ public class IPv6 extends IP<IPv6> {
 		return null;
 	}
 
+	public String toShortenedIP() {
+		if (ipShortenedText == null) {
+			ipShortenedText = createShortenedIp();
+		}
+		return ipShortenedText;
+	}
+
 	/**
 	 * @return returns a shortened IPv6 with leading zeros removed and the longest sequence of zeros
 	 * shortened to "::"
 	 */
-	public String toShortenedIP() {
+	private String createShortenedIp() {
 		String[] ipParts = ip;
 		int longestZeroSequence = 0;
 		int currentZeroSequence = 0;
-		int longestZeroSequenceIndex = 0;
-		int currentZeroSequenceIndex = 0;
-		ipParts = Arrays.stream(ipParts).map(part -> StringUtils.removeAllLeading(part, '0'))
+		int longestZeroSequenceIndex = -1;
+		int currentZeroSequenceIndex = -1;
+
+		//removes leading zeros
+		ipParts = Arrays.stream(ipParts).map(part -> part.replaceAll("^0+", ""))
+				.map(part -> part.isEmpty() ? "0" : part) //if all digits are 0 append a 0 to not leave it
+				// empty
 				.toArray(String[]::new);
+
+		// longest sequence of just 0's
 		for (int i = 0; i < ipParts.length; i++) {
-			if (ipParts[i] == null || ipParts[i].isEmpty()) {
+			if ("0".equals(ipParts[i])) {
+				if (currentZeroSequence == 0) {
+					currentZeroSequenceIndex = i;
+				}
 				currentZeroSequence++;
+
 				if (currentZeroSequence > longestZeroSequence) {
 					longestZeroSequence = currentZeroSequence;
 					longestZeroSequenceIndex = currentZeroSequenceIndex;
 				}
 			} else {
 				currentZeroSequence = 0;
-				currentZeroSequenceIndex = i;
 			}
 		}
-		if (longestZeroSequence > 1) {
-			ipParts[longestZeroSequenceIndex] = "";
-			for (int i = 1; i < longestZeroSequence; i++) {
-				ipParts[longestZeroSequenceIndex + i] = "";
+
+		//compress the longest part down to just ::
+		StringBuilder sb = new StringBuilder();
+		boolean hasCompressed = false;
+
+		for (int i = 0; i < ipParts.length; i++) {
+			if (i == longestZeroSequenceIndex && longestZeroSequence > 1 && !hasCompressed) {
+				sb.append("::");
+				hasCompressed = true;
+				i += longestZeroSequence - 1; // Skip the next longestZeroSequence - 1 blocks
+			} else {
+				sb.append(ipParts[i]);
+				if (i < ipParts.length - 1) {
+					sb.append(":");
+				}
 			}
 		}
-		return String.join(":", ipParts);
+
+		// Ensure "::" only appears once
+		if (sb.toString().endsWith(":::") && hasCompressed) {
+			sb.delete(sb.length() - 1, sb.length()); // Remove extra ":"
+		}
+
+		return sb.toString();
 	}
 
 	/**
@@ -266,7 +303,7 @@ public class IPv6 extends IP<IPv6> {
 	 */
 	@Override
 	public String toString() {
-		return String.join(":", ip);
+		return ipText;
 	}
 
 	@Override
