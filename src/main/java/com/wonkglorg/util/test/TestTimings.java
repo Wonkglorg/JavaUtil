@@ -22,7 +22,6 @@ public class TestTimings {
 	//perhaps with a check what type it is?
 
 	private record RunFunction(String name, Object function, Object... objects) {
-
 	}
 
 	private List<TimingReport> time(List<RunFunction> functions, long repeats) {
