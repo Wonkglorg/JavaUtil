@@ -370,6 +370,29 @@ public class StringUtils {
 				.collect(Collectors.joining(" "));
 	}
 
+	public static String[] split(String input, char delimiter) {
+		if (input == null) {
+			return new String[0];
+		}
+
+		ArrayList<String> resultList = new java.util.ArrayList<>();
+
+		StringBuilder currentSubstring = new StringBuilder();
+
+		for (char c : input.toCharArray()) {
+			if (c == delimiter) {
+				resultList.add(currentSubstring.toString());
+				currentSubstring.setLength(0);
+			} else {
+				currentSubstring.append(c);
+			}
+		}
+
+		resultList.add(currentSubstring.toString());
+
+		return resultList.toArray(new String[0]);
+	}
+
 	/**
 	 * Formats a String c# style which label them based on index and not position.
 	 * Example:

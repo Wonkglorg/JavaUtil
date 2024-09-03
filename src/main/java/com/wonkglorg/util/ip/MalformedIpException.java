@@ -7,4 +7,8 @@ public class MalformedIpException extends RuntimeException {
 	public MalformedIpException(String message) {
 		super(message);
 	}
+
+	public MalformedIpException(Throwable cause) {
+		super(cause);
+	}
 }

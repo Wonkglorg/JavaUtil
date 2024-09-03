@@ -26,8 +26,8 @@ public class ConsoleUtil {
         converterMappings.put(Long.class, Long::parseLong);
         converterMappings.put(Float.class, Float::parseFloat);
         converterMappings.put(Boolean.class, booleanParser());
-        converterMappings.put(IPv4.class, IPv4::new);
-        converterMappings.put(IPv6.class, IPv6::new);
+        converterMappings.put(IPv4.class, IPv4::of);
+        converterMappings.put(IPv6.class, IPv6::of);
         converterMappings.put(Character.class, charParser());
     }
 

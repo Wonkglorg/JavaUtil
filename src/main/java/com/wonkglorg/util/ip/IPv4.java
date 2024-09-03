@@ -12,66 +12,59 @@ import java.util.stream.Collectors;
 /**
  * Represents an IPv4
  */
-public class IPv4 implements IP {
+public class IPv4 extends IP<IPv4> {
 
+	public static final IPv4 Min = new IPv4(new int[]{0, 0, 0, 1});
+	public static final IPv4 Max = new IPv4(new int[]{255, 255, 255, 255});
 	private int[] ip = new int[4];
+
+	private IPv4(int[] ipParts) {
+		this.ip = ipParts;
+	}
 
 	/**
 	 * Creates a new ip from its 4 parts
 	 *
 	 * @param ip the 4 parts of the ip address
-	 * @throws IllegalArgumentException if the ip has not 4 parts or a part is not between 0 and 255
+	 * @throws MalformedIpException if the ip is not valid
 	 */
-	public IPv4(int[] ip) throws IllegalArgumentException {
-		validateIpParts(ip).ifPresent(e -> {
-			throw e;
-		});
+	public static IPv4 of(int[] ip) {
+		var result = validate(ip);
 
-		this.ip = Arrays.copyOf(ip, 4);
+		if (!result.isValid()) {
+			throw result.getException();
+		}
+
+		return result.getIp();
 	}
 
 	/**
 	 * Creates a new ip from its 4 parts
 	 *
-	 * @param ip1 first ip part
-	 * @param ip2 second ip part
-	 * @param ip3 third ip part
-	 * @param ip4 fourth ip part
-	 * @throws IllegalArgumentException if the ip has not 4 parts or a part is not between 0 and 255
+	 * @param part1 first ip part
+	 * @param part2 second ip part
+	 * @param part3 third ip part
+	 * @param part4 fourth ip part
+	 * @throws MalformedIpException if the ip has not 4 parts or a part is not between 0 and 255
 	 */
-	public IPv4(int ip1, int ip2, int ip3, int ip4) throws IllegalArgumentException {
-		this(new int[]{ip1, ip2, ip3, ip4});
+	public static IPv4 of(int part1, int part2, int part3, int part4) {
+		return of(new int[]{part1, part2, part3, part4});
 	}
 
 	/**
-	 * Creates a new ip from a string formatted as "xxx.xxx.xxx.xxx"
+	 * Creates a new ip from a string
 	 *
-	 * @param ip
+	 * @param ip the string ip representation formatted as "xxx.xxx.xxx.xxx"
 	 * @throws IllegalArgumentException if the ip is not in the correct format
 	 */
-	public IPv4(String ip) throws IllegalArgumentException {
-		int[] parts = convertToIpParts(ip);
-		this.ip = Arrays.copyOf(parts, 4);
-	}
-
-	/**
-	 * Validates and Converts a string formatted as "xxx.xxx.xxx.xxx" to an IPv4
-	 *
-	 * @param ip the ip to convert
-	 * @return the IPv4
-	 * @throws IllegalArgumentException if the ip is not in the correct format
-	 */
-	private int[] convertToIpParts(String ip) {
-		validateIp(ip).ifPresent(e -> {
-			throw e;
-		});
-		String[] parts = ip.split("\\.");
-		int[] ipArray = new int[4];
-		for (int i = 0; i < 4; i++) {
-			ipArray[i] = Integer.parseInt(parts[i]);
+	public static IPv4 of(String ip) {
+		var result = validate(ip);
+		if (!result.isValid()) {
+			throw result.getException();
 		}
-		return ipArray;
+		return result.getIp();
 	}
+
 
 	/**
 	 * Validated an ipv4 address formatted as "xxx.xxx.xxx.xxx"
@@ -79,21 +72,19 @@ public class IPv4 implements IP {
 	 * @param ip the ip string to test
 	 * @return an empty optional if valid else the error it threw
 	 */
-	@Override
-	public Optional<MalformedIpException> validateIp(String ip) {
+	private static ValidationResult<IPv4> validate(String ip) {
 		if (ip == null || ip.isBlank()) {
-			return Optional.of(new MalformedIpException("IP cannot be null or blank"));
+			return new ValidationResult<>("IP cannot be null or blank");
 		}
 
 		if (StringUtils.countOccurrences(ip, '.') > 3) {
-			return Optional.of(new MalformedIpException("Malformed Ip"));
+			return new ValidationResult<>("Malformed Ip");
 		}
 
 		String[] parts = ip.split("\\.");
 
 		if (parts.length != 4) {
-			return Optional.of(
-					new MalformedIpException("IP must have 4 parts but found " + parts.length));
+			return new ValidationResult<>("IP must have 4 parts but found " + parts.length);
 		}
 
 		int[] ipArray = new int[4];
@@ -102,10 +93,10 @@ public class IPv4 implements IP {
 				ipArray[i] = Integer.parseInt(parts[i]);
 			}
 		} catch (NumberFormatException e) {
-			return Optional.of(new MalformedIpException(e.getMessage()));
+			return new ValidationResult<>(new MalformedIpException(e));
 		}
 
-		return validateIpParts(ipArray);
+		return validate(ipArray);
 	}
 
 	/**
@@ -113,19 +104,19 @@ public class IPv4 implements IP {
 	 *
 	 * @return an empty optional if valid else the error it threw
 	 */
-	public Optional<MalformedIpException> validateIpParts(int[] ipParts) {
+	private static ValidationResult<IPv4> validate(int[] ipParts) {
 		if (ipParts.length != 4) {
-			return Optional.of(
-					new MalformedIpException("IP must have 4 parts but found " + ipParts.length));
+			return new ValidationResult<>("IP must have 4 parts but found " + ipParts.length);
 		}
 
 		for (int i = 0; i < 4; i++) {
 			if (ipParts[i] < 0 || ipParts[i] > 255) {
-				return Optional.of(new MalformedIpException(
-						"IP parts must be between 0 and 255 but was " + ipParts[i] + " at position " + i));
+				return new ValidationResult<>(
+						"IP parts must be between 0 and 255 but was " + ipParts[i] + " at position " + i);
 			}
 		}
-		return Optional.empty();
+
+		return new ValidationResult<>(new IPv4(ipParts));
 	}
 
 
@@ -240,7 +231,7 @@ public class IPv4 implements IP {
 			throw e;
 		});
 		int mask = 0xFFFFFFFF << (32 - cidr);
-		return new IPv4((mask >> 24) & 0xFF, (mask >> 16) & 0xFF, (mask >> 8) & 0xFF, mask & 0xFF);
+		return IPv4.of((mask >> 24) & 0xFF, (mask >> 16) & 0xFF, (mask >> 8) & 0xFF, mask & 0xFF);
 	}
 
 
@@ -252,11 +243,23 @@ public class IPv4 implements IP {
 		return Optional.empty();
 	}
 
+	/**
+	 * Converts the Ipv4 Address to a valid Ipv6 Address formatted as ::ffff:IPv4-address
+	 */
+	public IPv6 toIpv6() {
+		return IPv6.fromIpv4(this);
+	}
+
+	/**
+	 * @return a copy of the ipv4 segments
+	 */
+	public int[] getSegments() {
+		return Arrays.copyOf(ip, ip.length);
+	}
+
 
 	/**
 	 * Returns the ip as a string formatted as "xxx.xxx.xxx.xxx"
-	 *
-	 * @return
 	 */
 	@Override
 	public @NotNull String toString() {

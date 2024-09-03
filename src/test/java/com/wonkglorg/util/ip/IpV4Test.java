@@ -11,34 +11,40 @@ class IpV4Test {
 
 	@Test
 	void testValidIPv4() {
-		IPv4 ipFromInts = new IPv4(255, 10, 2, 3);
+		IPv4 ipFromInts = IPv4.of(255, 10, 2, 3);
 		assertEquals(validV4Ip, ipFromInts.toString());
 
-		IPv4 ipFromArrays = new IPv4(new int[]{255, 10, 2, 3});
+		IPv4 ipFromArrays = IPv4.of(new int[]{255, 10, 2, 3});
 		assertEquals(validV4Ip, ipFromArrays.toString());
 
-		IPv4 ipFromString = new IPv4(validV4Ip);
+		IPv4 ipFromString = IPv4.of(validV4Ip);
 		assertEquals(validV4Ip, ipFromString.toString());
+
+		IPv4 smallestIp = IPv4.of("0.0.0.1");
+		assertEquals(IPv4.Min, smallestIp);
+
+		IPv4 maxIp = IPv4.of("255.255.255.255");
+		assertEquals(IPv4.Max, maxIp);
 	}
 
 	@Test
 	void testMalformationsThrow() {
-		assertThrows(MalformedIpException.class, () -> new IPv4((String) null),
+		assertThrows(MalformedIpException.class, () -> IPv4.of((String) null),
 				"IP cannot be null or blank");
-		assertThrows(MalformedIpException.class, () -> new IPv4(""), "IP cannot be null or blank");
-		assertThrows(MalformedIpException.class, () -> new IPv4("1.30.1.3."), "Malformed Ip");
-		assertThrows(MalformedIpException.class, () -> new IPv4("1..."));
-		assertThrows(RuntimeException.class, () -> new IPv4("344.1.3.3"));
-		assertThrows(RuntimeException.class, () -> new IPv4(344, 1, 3, 3));
-		assertThrows(RuntimeException.class, () -> new IPv4(new int[]{344, 344, 1}));
+		assertThrows(MalformedIpException.class, () -> IPv4.of(""), "IP cannot be null or blank");
+		assertThrows(MalformedIpException.class, () -> IPv4.of("1.30.1.3."), "Malformed Ip");
+		assertThrows(MalformedIpException.class, () -> IPv4.of("1..."));
+		assertThrows(RuntimeException.class, () -> IPv4.of("344.1.3.3"));
+		assertThrows(RuntimeException.class, () -> IPv4.of(344, 1, 3, 3));
+		assertThrows(RuntimeException.class, () -> IPv4.of(new int[]{344, 344, 1}));
 	}
 
 
 	@Test
 	void testNetworkAddress() {
-		IPv4 ip = new IPv4(192, 168, 1, 10);
-		IPv4 subnetMask = new IPv4(255, 255, 255, 0);
-		IPv4 expectedNetworkAddress = new IPv4(192, 168, 1, 0);
+		IPv4 ip = IPv4.of(192, 168, 1, 10);
+		IPv4 subnetMask = IPv4.of(255, 255, 255, 0);
+		IPv4 expectedNetworkAddress = IPv4.of(192, 168, 1, 0);
 
 		int cidr = 24;
 
@@ -61,9 +67,9 @@ class IpV4Test {
 
 	@Test
 	void testBroadcastAddress() {
-		IPv4 ip = new IPv4(192, 168, 1, 10);
-		IPv4 subnetMask = new IPv4(255, 255, 255, 0);
-		IPv4 expectedBroadcastAddress = new IPv4(192, 168, 1, 255);
+		IPv4 ip = IPv4.of(192, 168, 1, 10);
+		IPv4 subnetMask = IPv4.of(255, 255, 255, 0);
+		IPv4 expectedBroadcastAddress = IPv4.of(192, 168, 1, 255);
 
 		int cidr = 24;
 
