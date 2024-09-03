@@ -236,11 +236,11 @@ public class ConsoleUtil {
 
 
     public static void print(Object... text){
-        System.out.print(text);
+        System.out.print(Arrays.toString(text));
     }
 
     public static void println(Object... text){
-        System.out.println(text);
+        System.out.println(Arrays.toString(text));
     }
 
     //-----------------------------------------------Parsers----------------------------------------------------------
