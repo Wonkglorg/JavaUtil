@@ -6,20 +6,20 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class IpV6Test {
-	private final String textV6Ip = "2001:0DB8:AC10:FE01:0000:0000:0000:0000";
 
 	@Test
 	void testValidIPV6() {
-		IPv6 ipFromString = IPv6.of(textV6Ip);
-		Assertions.assertEquals(textV6Ip, ipFromString.toString());
+		IPv6 validIp = IPv6.of("2001:0DB8:AC10:FE01:0000:0000:0000:0000");
+		IPv6 ipFromString = IPv6.of("2001:0DB8:AC10:FE01:0000:0000:0000:0000");
+		Assertions.assertEquals(validIp, ipFromString);
 
 		IPv6 ipFromStringParts =
 				IPv6.of("2001", "0DB8", "AC10", "FE01", "0000", "0000", "0000", "0000");
-		Assertions.assertEquals(textV6Ip, ipFromStringParts.toString());
+		Assertions.assertEquals(validIp, ipFromStringParts);
 
 		IPv6 ipFromArrays =
 				IPv6.of(new String[]{"2001", "0DB8", "AC10", "FE01", "0000", "0000", "0000", "0000"});
-		Assertions.assertEquals(textV6Ip, ipFromArrays.toString());
+		Assertions.assertEquals(validIp, ipFromArrays);
 
 		IPv6 smallestAddress = IPv6.of("::");
 		Assertions.assertEquals(IPv6.Min, smallestAddress);
@@ -38,13 +38,29 @@ class IpV6Test {
 		IPv6 shortenedStart = IPv6.of("ffff::");
 		Assertions.assertEquals(IPv6.of("ffff:0000:0000:0000:0000:0000:0000:0000"), shortenedStart);
 
-		IPv6 shortenedStart2Segment = IPv6.of("ffff:ffff::");
+		IPv6 shortenedStart2Segment = IPv6.of("fFff:ffff::");
 		Assertions.assertEquals(IPv6.of("ffff:ffff:0000:0000:0000:0000:0000:0000"),
 				shortenedStart2Segment);
 
 
 		IPv6 shortenedMiddle = IPv6.of("ffff::ffff");
 		Assertions.assertEquals(IPv6.of("ffff:0000:0000:0000:0000:0000:0000:ffff"), shortenedMiddle);
+	}
+
+	@Test
+	void formatting() {
+		IPv6 validIp = IPv6.of("2001:0DB8:AC10:FE01:0000:0000:0000:0000");
+		Assertions.assertEquals("2001:0db8:ac10:fe01:0000:0000:0000:0000", validIp.toString());
+
+		Assertions.assertEquals("::", IPv6.Min.toShortenedIP());
+
+		Assertions.assertEquals("0000:0000:0000:0000:0000:0000:0000:0000", IPv6.Min.toString());
+
+		Assertions.assertEquals("0:20:1:ffff::", IPv6.of("0000:20:0001:ffff::").toShortenedIP());
+		Assertions.assertEquals("0000:0020:0001:ffff:0000:0000:0000:0000",
+				IPv6.of("0000:20:0001:ffff::").toString());
+
+		Assertions.assertEquals("2001:db8:ac10:fe01::", validIp.toShortenedIP());
 	}
 
 	@Test
