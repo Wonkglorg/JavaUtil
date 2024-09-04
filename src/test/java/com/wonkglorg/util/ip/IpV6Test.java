@@ -68,6 +68,6 @@ class IpV6Test {
 		assertThrows(MalformedIpException.class, () -> IPv6.of((String) null),
 				"IP cannot be null or blank");
 		assertThrows(MalformedIpException.class, () -> IPv6.of(":::"));
-		assertThrows(MalformedIpException.class, () -> IPv6.of("eeee::"));
+		assertThrows(MalformedIpException.class, () -> IPv6.of("gggg::"));
 	}
 }

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 /**
  * Represents an IPv4
  */
+@SuppressWarnings("unused")
 public class IPv4 extends IP<IPv4> {
 
 	public static final IPv4 Min = new IPv4(new int[]{0, 0, 0, 1});

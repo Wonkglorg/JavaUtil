@@ -208,7 +208,7 @@ public class IPv6 extends IP<IPv6> {
 	 * Checks if the segment is valid
 	 *
 	 * @param part segment to check
-	 * @return an emtpy optional if no error occured otherwise the error to throw
+	 * @return an empty optional if no error occured otherwise the error to throw
 	 */
 	private static String isValidSegment(String part) {
 		if (part.length() > 4) {
