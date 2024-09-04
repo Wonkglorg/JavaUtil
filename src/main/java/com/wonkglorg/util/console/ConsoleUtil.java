@@ -24,22 +24,15 @@ public class ConsoleUtil {
     //Default implemented Converter mappings
     static {
         converterMappings.put(Integer.class, Integer::parseInt);
-        converterMappings.put(int.class, Integer::parseInt);
         converterMappings.put(Double.class, Double::parseDouble);
-        converterMappings.put(double.class, Double::parseDouble);
         converterMappings.put(String.class, String::valueOf);
         converterMappings.put(Long.class, Long::parseLong);
-        converterMappings.put(long.class, Long::parseLong);
         converterMappings.put(Float.class, Float::parseFloat);
-        converterMappings.put(float.class, Float::parseFloat);
         converterMappings.put(Boolean.class, booleanParser());
-        converterMappings.put(boolean.class, booleanParser());
         converterMappings.put(IPv4.class, IPv4::of);
         converterMappings.put(IPv6.class, IPv6::of);
         converterMappings.put(Character.class, charParser());
-        converterMappings.put(char.class, charParser());
         converterMappings.put(Byte.class, Byte::parseByte);
-        converterMappings.put(byte.class, Byte::parseByte);
     }
 
     /**
@@ -78,7 +71,7 @@ public class ConsoleUtil {
                 value = type.cast(convert(input, type));
                 break;
             } catch (Exception e) {
-                logger.log(Level.SEVERE, error, e);
+                System.out.println(error);
             }
         }
 
@@ -133,7 +126,7 @@ public class ConsoleUtil {
                 value = converter.apply(input);
                 break;
             } catch (Exception e) {
-                logger.log(Level.WARNING, errorMessage);
+                System.out.println(errorMessage);
             }
         }
 
@@ -174,7 +167,7 @@ public class ConsoleUtil {
                     logger.log(Level.WARNING, error);
                 }
             } catch (Exception ignored) {
-                logger.log(Level.WARNING, error);
+                System.out.println(error);
             }
         }
 
