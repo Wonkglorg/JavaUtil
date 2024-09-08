@@ -32,6 +32,12 @@ public class DownloaderUtil {
                 LOGGER.log(LOGGER.getLevel(), e.getMessage(), e);
             }
             return null;
+        } catch (InterruptedException e) {
+            if (extraInfo) {
+                LOGGER.log(LOGGER.getLevel(), e.getMessage(), e);
+            }
+            Thread.currentThread().interrupt();
+            return null;
         }
     }
 
