@@ -120,7 +120,7 @@ public class WebUtil {
             }
 
             return doesLinkPointToFileOffline(url.toLowerCase());
-        } catch (IOException | InterruptedException e) {
+        } catch (Exception e) {
             return false;
         }
     }
