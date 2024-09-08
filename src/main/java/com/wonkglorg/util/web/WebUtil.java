@@ -13,8 +13,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-public class DownloaderUtil {
-    private static final Logger LOGGER = Logger.getLogger(DownloaderUtil.class.getName());
+public class WebUtil {
+    private static final Logger LOGGER = Logger.getLogger(WebUtil.class.getName());
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
 
     /**
@@ -23,7 +23,7 @@ public class DownloaderUtil {
      * @param url The URL
      * @return The stream or null if the stream could not be opened.
      */
-    public HttpResponse<InputStream> getStream(String url, boolean extraInfo) {
+    public static HttpResponse<InputStream> getStream(String url, boolean extraInfo) {
         try {
             HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
             return HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream());
@@ -47,7 +47,7 @@ public class DownloaderUtil {
      * @param url The URL
      * @return The stream or null if the stream could not be opened.
      */
-    public HttpResponse<InputStream> getStream(String url) {
+    public static HttpResponse<InputStream> getStream(String url) {
         return getStream(url, false);
     }
 
@@ -59,7 +59,7 @@ public class DownloaderUtil {
      * @param options    The options to use when copying the file.
      * @return The downloaded / existing file or an empty optional if the download failed.
      */
-    public Optional<File> downloadFile(String url, String targetPath, boolean extraInfo, StandardCopyOption... options) {
+    public static Optional<File> downloadFile(String url, String targetPath, boolean extraInfo, StandardCopyOption... options) {
         try (InputStream in = getStream(url).body()) {
             if (in == null) {
                 return Optional.empty();
@@ -83,7 +83,7 @@ public class DownloaderUtil {
      * @param options    The options to use when copying the file.
      * @return The downloaded / existing file or an empty optional if the download failed.
      */
-    public Optional<File> downloadFile(String url, String targetPath, StandardCopyOption... options) {
+    public static Optional<File> downloadFile(String url, String targetPath, StandardCopyOption... options) {
         return downloadFile(url, targetPath, false, options);
     }
 
@@ -94,10 +94,64 @@ public class DownloaderUtil {
      * @param targetPath The path to save the downloaded file to.
      * @return The downloaded file / existing file if it already exists or an empty optional if the download failed.
      */
-    public Optional<File> downloadFile(String url, String targetPath) {
+    public static Optional<File> downloadFile(String url, String targetPath) {
         if (Files.exists(Path.of(targetPath))) {
             return Optional.of(new File(targetPath));
         }
         return downloadFile(url, targetPath, StandardCopyOption.REPLACE_EXISTING);
     }
+
+    private static final String[] fileExtensions = {"pdf", "jpg", "png", "zip", "doc", "xls", "mp3", "mp4", "avi", "exe", "rar", "svg"};
+
+    /**
+     * Checks if the given URL points to a file. this check is not 100% accurate but a good estimate.
+     *
+     * @param url The URL
+     * @return True if the URL points to a file, false otherwise.
+     */
+    public static boolean doesLinkPointToFile(String url) {
+        try {
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
+            HttpResponse<Void> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
+            String contentDisposition = response.headers().firstValue("Content-Disposition").orElse("");
+
+            if (contentDisposition.contains("attachment")) {
+                return true;
+            }
+
+            return doesLinkPointToFileOffline(url.toLowerCase());
+        } catch (IOException | InterruptedException e) {
+            LOGGER.log(LOGGER.getLevel(), e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Checks if the given URL points to a file. this check is not 100% accurate but a good estimate. Less accurate than the online version.
+     *
+     * @param url The URL
+     * @return True if the URL points to a file, false otherwise.
+     */
+    public static boolean doesLinkPointToFileOffline(String url) {
+
+        if (url == null || url.isEmpty()) {
+            return false;
+        }
+
+        if (url.endsWith("/")) {
+            return false;
+        }
+
+        String[] split = url.split("\\.");
+        String extension = split[split.length - 1];
+
+        for (String fileExtension : fileExtensions) {
+            if (fileExtension.equals(extension)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
+
+
