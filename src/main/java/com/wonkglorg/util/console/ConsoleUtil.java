@@ -4,6 +4,7 @@ import com.wonkglorg.util.ip.IPv4;
 import com.wonkglorg.util.ip.IPv6;
 
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -33,6 +34,7 @@ public class ConsoleUtil {
         converterMappings.put(IPv6.class, IPv6::of);
         converterMappings.put(Character.class, charParser());
         converterMappings.put(Byte.class, Byte::parseByte);
+        converterMappings.put(Path.class, Path::of);
     }
 
     /**
@@ -62,8 +64,12 @@ public class ConsoleUtil {
      * @param <T>   type of the value to be returned
      * @return value of the desired type
      */
-    public static synchronized <T> T readInput(Class<T> type, String error) {
+    public static synchronized <T> T readInput(Class<T> type, String message, String error) {
         checkIfConverterExists(type);
+        if (message != null && !message.isEmpty()) {
+            println(message);
+        }
+
         T value;
         while (true) {
             try {
@@ -71,7 +77,7 @@ public class ConsoleUtil {
                 value = type.cast(convert(input, type));
                 break;
             } catch (Exception e) {
-                System.out.println(error);
+                if (error != null && !error.isEmpty()) println(error);
             }
         }
 
@@ -86,8 +92,20 @@ public class ConsoleUtil {
      * @param <T>  type of the value to be returned
      * @return value of the desired type
      */
+    public static synchronized <T> T readInput(Class<T> type, String message) {
+        return readInput(type, message, "Invalid input, please try again!");
+    }
+
+    /**
+     * Reads a value from the console and returns matching type, with a default error message if the
+     * input is invalid
+     *
+     * @param type desired type
+     * @param <T>  type of the value to be returned
+     * @return value of the desired type
+     */
     public static synchronized <T> T readInput(Class<T> type) {
-        return readInput(type, "Invalid input, please try again!");
+        return readInput(type, "");
     }
 
     /**
@@ -118,15 +136,16 @@ public class ConsoleUtil {
      * @param <T>       type of the value to be returned
      * @return value of the desired type
      */
-    public static synchronized <T> T readInput(Function<String, T> converter, String errorMessage) {
+    public static synchronized <T> T readInput(Function<String, T> converter, String message, String error) {
         T value;
+        if (message != null && !message.isEmpty()) println(message);
         while (true) {
             try {
                 String input = scanner.nextLine();
                 value = converter.apply(input);
                 break;
             } catch (Exception e) {
-                System.out.println(errorMessage);
+                if (error != null && !error.isEmpty()) println(error);
             }
         }
 
@@ -143,7 +162,21 @@ public class ConsoleUtil {
      * @return value of the desired type
      */
     public static synchronized <T> T readInput(Function<String, T> converter) {
-        return readInput(converter, "Invalid input, please try again!");
+        return readInput(converter, "", "Invalid input, please try again!");
+    }
+
+    /**
+     * Reads a value from the console and returns matching type, with a default error message if the
+     * input is invalid
+     *
+     * @param converter function to convert the input to the desired type (must throw an error on
+     *                  mismatch)
+     * @param message   message to send
+     * @param <T>       type of the value to be returned
+     * @return value of the desired type
+     */
+    public static synchronized <T> T readInput(Function<String, T> converter, String message) {
+        return readInput(converter, message, "Invalid input, please try again!");
     }
 
 
@@ -167,7 +200,7 @@ public class ConsoleUtil {
                     logger.log(Level.WARNING, error);
                 }
             } catch (Exception ignored) {
-                System.out.println(error);
+                println(error);
             }
         }
 
@@ -259,7 +292,7 @@ public class ConsoleUtil {
 
     public static void addNewLines(int count) {
         for (int i = 0; i < count; i++) {
-            System.out.println();
+            println();
         }
     }
 
@@ -280,12 +313,45 @@ public class ConsoleUtil {
     }
 
 
+    /**
+     * Prints text to the console
+     *
+     * @param text text to be printed
+     */
     public static void print(Object... text) {
-        System.out.print(Arrays.toString(text));
+        for (Object t : text) {
+            System.out.print(t);
+        }
     }
 
+    /**
+     * Prints the text to the console with a new line
+     *
+     * @param text text to be printed
+     */
     public static void println(Object... text) {
-        System.out.println(Arrays.toString(text));
+        if (text.length == 0) {
+            System.out.println();
+            return;
+        }
+        for (Object t : text) {
+            System.out.println(t);
+        }
+    }
+
+    /**
+     * Sends an updatable message to the console, the message can be updated by sending a new message using {@link #printr(Object)}
+     * <p>
+     * To resume normal printing without removing this line use a new line character or call {@link #println(Object...)}
+     * <p>
+     * Only works if this method was used to print the text to update, and does not work if a new line has been
+     * sent in between which is not updatable, works by sending a carriage return character to the console which
+     * puts the cursor at the start of the line and overwrites the text
+     *
+     * @param text text to be printed
+     */
+    public static void printr(Object text) {
+        System.out.print("\r" + text);
     }
 
     //------------------------------Parsers------------------------------------------
@@ -305,4 +371,308 @@ public class ConsoleUtil {
             return s.charAt(0);
         };
     }
+
+    //------------------------------Specialised------------------------------------------
+
+    /**
+     * Reads a {@link Boolean} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized boolean readBoolean() {
+        return readInput(Boolean.class);
+    }
+
+    /**
+     * Reads a {@link Boolean} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized boolean readBoolean(String message) {
+        return readInput(Boolean.class, message);
+    }
+
+    /**
+     * Reads a {@link Boolean} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized boolean readBoolean(String message, String error) {
+        return readInput(Boolean.class, message, error);
+    }
+
+    /**
+     * Reads an {@link Integer} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized int readInt() {
+        return readInput(Integer.class);
+    }
+
+    /**
+     * Reads a {@link Integer} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized int readInt(String message) {
+        return readInput(Integer.class, message);
+    }
+
+    /**
+     * Reads a {@link Integer} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized int readInt(String message, String error) {
+        return readInput(Integer.class, message, error);
+    }
+
+    /**
+     * Reads a {@link Double} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized double readDouble() {
+        return readInput(Double.class);
+    }
+
+    /**
+     * Reads a {@link Double} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized double readDouble(String message) {
+        return readInput(Double.class, message);
+    }
+
+    /**
+     * Reads a {@link Double} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized double readDouble(String message, String error) {
+        return readInput(Double.class, message, error);
+    }
+
+    /**
+     * Reads a {@link Long} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized long readLong() {
+        return readInput(Long.class);
+    }
+
+    /**
+     * Reads a {@link Long} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized long readLong(String message) {
+        return readInput(Long.class, message);
+    }
+
+    /**
+     * Reads a {@link Long} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized long readLong(String message, String error) {
+        return readInput(Long.class, message, error);
+    }
+
+    /**
+     * Reads a {@link Float} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized float readFloat() {
+        return readInput(Float.class);
+    }
+
+    /**
+     * Reads a {@link Float} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized float readFloat(String message) {
+        return readInput(Float.class, message);
+    }
+
+    /**
+     * Reads a {@link Float} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized float readFloat(String message, String error) {
+        return readInput(Float.class, message, error);
+    }
+
+    /**
+     * Reads a {@link Byte} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized byte readByte() {
+        return readInput(Byte.class);
+    }
+
+    /**
+     * Reads a {@link Byte} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized byte readByte(String message) {
+        return readInput(Byte.class, message);
+    }
+
+    /**
+     * Reads a {@link Byte} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized byte readByte(String message, String error) {
+        return readInput(Byte.class, message, error);
+    }
+
+    /**
+     * Reads a {@link Character} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized char readChar() {
+        return readInput(Character.class);
+    }
+
+    /**
+     * Reads a {@link Character} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized char readChar(String message) {
+        return readInput(Character.class, message);
+    }
+
+    /**
+     * Reads a {@link Character} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized char readChar(String message, String error) {
+        return readInput(Character.class, message, error);
+    }
+
+    /**
+     * Reads a {@link Path} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized Path readPath() {
+        return readInput(Path.class);
+    }
+
+    /**
+     * Reads a {@link Path} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized Path readPath(String message) {
+        return readInput(Path.class, message);
+    }
+
+    /**
+     * Reads a {@link Path} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized Path readPath(String message, String error) {
+        return readInput(Path.class, message, error);
+    }
+
+    /**
+     * Reads a boolean value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized IPv4 readIPv4() {
+        return readInput(IPv4.class);
+    }
+
+    /**
+     * Reads a {@link IPv4} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized IPv4 readIPv4(String message) {
+        return readInput(IPv4.class, message);
+    }
+
+    /**
+     * Reads a {@link IPv4} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized IPv4 readIPv4(String message, String error) {
+        return readInput(IPv4.class, message, error);
+    }
+
+    /**
+     * Reads a {@link IPv6} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized IPv6 readIPv6() {
+        return readInput(IPv6.class);
+    }
+
+    /**
+     * Reads a {@link IPv6} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized IPv6 readIPv6(String message) {
+        return readInput(IPv6.class, message);
+    }
+
+    /**
+     * Reads a {@link IPv6} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized IPv6 readIPv6(String message, String error) {
+        return readInput(IPv6.class, message, error);
+    }
+
+
 }
