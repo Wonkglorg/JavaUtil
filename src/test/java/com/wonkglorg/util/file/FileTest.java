@@ -1,5 +1,6 @@
 package com.wonkglorg.util.file;
 
+import com.wonkglorg.util.files.FileUtils;
 import com.wonkglorg.util.web.WebUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -28,5 +29,12 @@ public class FileTest {
             boolean result = WebUtil.doesLinkPointToFile(entry.getKey());
             Assertions.assertEquals(entry.getValue(), result, "Link " + entry.getKey() + " caused an error.");
         }
+    }
+
+    @Test
+    public void canSanitizeFileNames() {
+        String fileName = "file?name";
+        String sanitized = FileUtils.sanitizeFileName(fileName);
+        Assertions.assertEquals("file_name", sanitized, "Sanitized file name is incorrect.");
     }
 }

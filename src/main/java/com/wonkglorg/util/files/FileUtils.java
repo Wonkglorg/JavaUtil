@@ -5,6 +5,7 @@ import com.wonkglorg.util.Platform;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 
 public class FileUtils {
 
@@ -51,7 +52,8 @@ public class FileUtils {
         String[] disallowedFileChars = platform.getDisallowedFileChars();
 
         for (String c : disallowedFileChars) {
-            fileName = fileName.replaceAll(c, replacement);
+            fileName = fileName.replaceAll(Pattern.quote(c), replacement);
+
         }
 
         return fileName;
