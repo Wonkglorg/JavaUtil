@@ -121,7 +121,6 @@ public class WebUtil {
 
             return doesLinkPointToFileOffline(url.toLowerCase());
         } catch (IOException | InterruptedException e) {
-            LOGGER.log(LOGGER.getLevel(), e.getMessage(), e);
             return false;
         }
     }
