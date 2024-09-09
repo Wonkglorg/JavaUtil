@@ -13,6 +13,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import static com.wonkglorg.util.console.ConsoleColor.*;
+import static com.wonkglorg.util.string.StringUtils.format;
+
 public class WebUtil {
     private static final Logger LOGGER = Logger.getLogger(WebUtil.class.getName());
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
@@ -150,6 +153,17 @@ public class WebUtil {
             }
         }
         return false;
+    }
+
+    /**
+     * @param success how many files were downloaded successfully
+     * @param skipped how many files were skipped
+     * @param error   how many files failed to download
+     * @return a formatted string with the download progress
+     */
+    public static String formattedProgress(int success, int skipped, int error) {
+        String template = GREEN + "Success" + RESET + ": {0} " + BLUE + " Skipped" + RESET + ": {1} " + RED + "Error" + RESET + ": {2} " + RESET;
+        return format(template, success, skipped, error);
     }
 }
 

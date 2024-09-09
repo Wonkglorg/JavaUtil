@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.wonkglorg.util.console.ConsoleUtil.println;
+import static com.wonkglorg.util.console.ConsoleUtil.printr;
+
 public class FileTest {
     private static final Map<String, Boolean> fileMap = new HashMap<>();
 
@@ -36,5 +39,14 @@ public class FileTest {
         String fileName = "file?name";
         String sanitized = FileUtils.sanitizeFileName(fileName);
         Assertions.assertEquals("file_name", sanitized, "Sanitized file name is incorrect.");
+    }
+
+    @Test
+    public void downloadTextFormatted() throws InterruptedException {
+        for (int i = 0; i < 10; i++) {
+            printr(WebUtil.formattedProgress(i, i / 3, i / 8));
+            Thread.sleep(500);
+        }
+
     }
 }
