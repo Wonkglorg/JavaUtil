@@ -54,7 +54,7 @@ public class FileTest {
     @Test
     public void createShortCutFile() throws MalformedURLException {
 
-        var result = WebUtil.getUrlInfo("https://cdn.discordapp.com/attachments/434388422854180885/435464529694949386/theprince.png?ex=66e06872&is=66df16f2&hm=58a1d55836c01b91f47cbd9a91291974bd342c4598e505654e7b6ae84aa10ba2&");
+        var result = WebUtil.getUrlInfo("https://www.youtube.com");
         printr(result);
 
         Path path = Path.of("C:\\Users\\Wonkglorg\\Desktop");

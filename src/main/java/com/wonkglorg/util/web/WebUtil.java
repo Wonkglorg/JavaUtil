@@ -110,110 +110,70 @@ public class WebUtil {
 
     private static final String[] fileExtensions = {"pdf", "jpg", "png", "zip", "doc", "xls", "mp3", "mp4", "avi", "exe", "rar", "svg"};
 
+
     /**
-     * Checks if the given URL points to a file. this check is not 100% accurate but a good estimate.
+     * Checks if the given URL points to a file. this check is not 100% accurate but a good estimate, estimates based on the url structure and does not send any requests.
      *
      * @param url The URL
      * @return True if the URL points to a file, false otherwise.
      */
     public static boolean doesLinkPointToFile(String url) {
         try {
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
-            HttpResponse<Void> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
-            String contentDisposition = response.headers().firstValue("Content-Disposition").orElse("");
-
-            if (contentDisposition.contains("attachment")) {
-                return true;
-            }
-
-            return doesLinkPointToFileOffline(url.toLowerCase());
-        } catch (Exception e) {
-            return false;
+            return getUrlInfo(url).isFile();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    /**
-     * Checks if the given URL points to a file. this check is not 100% accurate but a good estimate. Less accurate than the online version.
-     *
-     * @param url The URL
-     * @return True if the URL points to a file, false otherwise.
-     */
-    public static boolean doesLinkPointToFileOffline(String url) {
-
-        if (url == null || url.isEmpty()) {
-            return false;
-        }
-
-        if (url.endsWith("/")) {
-            return false;
-        }
-
-        String[] split = url.split("\\.");
-        String extension = split[split.length - 1];
-
-        for (String fileExtension : fileExtensions) {
-            if (fileExtension.equals(extension)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     /**
-     * Returns a {@link UrlInfo} object which splits and structures information contained within the url;
+     * Returns a {@link UrlInfo} object with structured information from the URL.
      *
      * @param urlString The URL
      * @return The structured information
      */
     public static UrlInfo getUrlInfo(String urlString) throws MalformedURLException {
         URL url = new URL(urlString);
+
         String host = url.getHost();
         String protocol = url.getProtocol();
         String path = url.getPath();
-        String websiteName = getWebsiteName(host);
-
         String query = url.getQuery();
         int port = url.getPort();
-        return new UrlInfo(urlString, host, websiteName, parseQueryString(query), port, path, protocol);
+
+        String websiteName = getWebsiteName(host);
+        String fileName = extractFileName(path);
+        String extension = extractExtension(fileName);
+
+        return new UrlInfo(urlString, host, websiteName, parseQueryString(query), port, path, protocol, fileName, extension);
     }
 
     private static String getWebsiteName(String host) {
         String[] parts = host.split("\\.");
-        int length = parts.length;
+        return parts.length > 2 ? parts[parts.length - 2] : parts[0];
+    }
 
-        if (length > 2) {
-            return parts[length - 2];
-        } else if (length == 2) {
-            return parts[0];
-        } else {
-            return host;
-        }
+    private static String extractFileName(String path) {
+        if (path == null || path.isEmpty()) return null;
+        String fileName = path.substring(path.lastIndexOf('/') + 1);
+        return fileName.isEmpty() || fileName.equals("/") ? null : fileName;
+    }
+
+    private static String extractExtension(String fileName) {
+        return fileName != null && fileName.contains(".") ? fileName.substring(fileName.lastIndexOf('.') + 1) : null;
     }
 
     private static Map<String, String> parseQueryString(String queryString) {
-        if (queryString == null || queryString.isEmpty()) {
-            return null;
-        }
-
         Map<String, String> resultMap = new HashMap<>();
+        if (queryString == null || queryString.isEmpty()) return resultMap;
 
-        //remove any trailing '&' or '?' from the query string
-        queryString = queryString.replaceAll("[&?]$", "");
-
-        String[] pairs = queryString.split("&");
-
-        for (String pair : pairs) {
+        for (String pair : queryString.split("&")) {
             String[] keyValue = pair.split("=", 2);
-            if (keyValue.length == 2) {
-                String key = keyValue[0];
-                String value = keyValue[1];
-                resultMap.put(key, value);
-            }
+            if (keyValue.length == 2) resultMap.put(keyValue[0], keyValue[1]);
         }
 
         return resultMap;
     }
-
 
     /**
      * @param success how many files were downloaded successfully
