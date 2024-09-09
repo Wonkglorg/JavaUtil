@@ -3,13 +3,17 @@ package com.wonkglorg.util.web;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -154,6 +158,62 @@ public class WebUtil {
         }
         return false;
     }
+
+    /**
+     * Returns a {@link UrlInfo} object which splits and structures information contained within the url;
+     *
+     * @param urlString The URL
+     * @return The structured information
+     */
+    public static UrlInfo getUrlInfo(String urlString) throws MalformedURLException {
+        URL url = new URL(urlString);
+        String host = url.getHost();
+        String protocol = url.getProtocol();
+        String path = url.getPath();
+        String websiteName = getWebsiteName(host);
+
+        String query = url.getQuery();
+        int port = url.getPort();
+        return new UrlInfo(urlString, host, websiteName, parseQueryString(query), port, path, protocol);
+    }
+
+    private static String getWebsiteName(String host) {
+        String[] parts = host.split("\\.");
+        int length = parts.length;
+
+        if (length > 2) {
+            return parts[length - 2];
+        } else if (length == 2) {
+            return parts[0];
+        } else {
+            return host;
+        }
+    }
+
+    private static Map<String, String> parseQueryString(String queryString) {
+        if (queryString == null || queryString.isEmpty()) {
+            return null;
+        }
+
+        Map<String, String> resultMap = new HashMap<>();
+
+        //remove any trailing '&' or '?' from the query string
+        queryString = queryString.replaceAll("[&?]$", "");
+
+        String[] pairs = queryString.split("&");
+
+        for (String pair : pairs) {
+            String[] keyValue = pair.split("=", 2);
+            if (keyValue.length == 2) {
+                String key = keyValue[0];
+                String value = keyValue[1];
+                resultMap.put(key, value);
+            }
+        }
+
+        return resultMap;
+    }
+
 
     /**
      * @param success how many files were downloaded successfully

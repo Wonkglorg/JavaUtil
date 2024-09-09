@@ -5,10 +5,11 @@ import com.wonkglorg.util.web.WebUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.net.MalformedURLException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.wonkglorg.util.console.ConsoleUtil.println;
 import static com.wonkglorg.util.console.ConsoleUtil.printr;
 
 public class FileTest {
@@ -48,5 +49,15 @@ public class FileTest {
             Thread.sleep(500);
         }
 
+    }
+
+    @Test
+    public void createShortCutFile() throws MalformedURLException {
+
+        var result = WebUtil.getUrlInfo("https://cdn.discordapp.com/attachments/434388422854180885/435464529694949386/theprince.png?ex=66e06872&is=66df16f2&hm=58a1d55836c01b91f47cbd9a91291974bd342c4598e505654e7b6ae84aa10ba2&");
+        printr(result);
+
+        Path path = Path.of("C:\\Users\\Wonkglorg\\Desktop");
+        FileUtils.createShortCutFile(path, result.websiteName(), result.url());
     }
 }
