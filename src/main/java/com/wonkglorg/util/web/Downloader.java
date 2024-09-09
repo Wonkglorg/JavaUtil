@@ -107,7 +107,7 @@ public abstract class Downloader {
      *
      * @return
      */
-    private String formattedProgress() {
+    protected String formattedProgress() {
         return formattedProgress(downloadStatuses.get(Status.SUCCESS), downloadStatuses.get(Status.SKIPPED), downloadStatuses.get(Status.ERROR));
     }
 
@@ -118,7 +118,7 @@ public abstract class Downloader {
      * @param timeTaken the time taken since start of download in ms
      * @return the formatted progress message
      */
-    private String formattedProgress(long timeTaken) {
+    protected String formattedProgress(long timeTaken) {
         return formattedProgress(downloadStatuses.get(Status.SUCCESS), downloadStatuses.get(Status.SKIPPED), downloadStatuses.get(Status.ERROR), timeTaken);
     }
 
@@ -130,7 +130,7 @@ public abstract class Downloader {
      * @param downloading the current file being downloaded
      * @return the formatted progress message
      */
-    private String formattedProgress(long timeTaken, String downloading) {
+    protected String formattedProgress(long timeTaken, String downloading) {
         return formattedProgress(downloadStatuses.get(Status.SUCCESS), downloadStatuses.get(Status.SKIPPED), downloadStatuses.get(Status.ERROR), timeTaken, downloading);
     }
 
@@ -143,7 +143,7 @@ public abstract class Downloader {
      * @param error   the number of failed downloads
      * @return the formatted progress message
      */
-    private String formattedProgress(int success, int skipped, int error) {
+    protected String formattedProgress(int success, int skipped, int error) {
         String template = GREEN + "Success" + RESET + ": {0} " + BLUE + " Skipped" + RESET + ": {1} " + RED + "Error" + RESET + ": {2} ";
         return format(template, success, skipped, error);
     }
@@ -159,7 +159,7 @@ public abstract class Downloader {
      * @param timeTakenInMS the time taken since start of download in ms
      * @return the formatted progress message
      */
-    private String formattedProgress(int success, int skipped, int error, long timeTakenInMS) {
+    protected String formattedProgress(int success, int skipped, int error, long timeTakenInMS) {
         String template = GREEN + "Success" + RESET + ": {0} " + BLUE + " Skipped" + RESET + ": {1} " + RED + "Error" + RESET + ": {2} " + CYAN + "Time taken" + RESET + ": {3}s  " + RESET;
         return format(template, success, skipped, error, timeTakenInMS / 1000);
     }
@@ -175,7 +175,7 @@ public abstract class Downloader {
      * @param downloading the current file being downloaded
      * @return the formatted progress message
      */
-    private String formattedProgress(int success, int skipped, int error, long timeTaken, String downloading) {
+    protected String formattedProgress(int success, int skipped, int error, long timeTaken, String downloading) {
         String template = GREEN + "Success" + RESET + ": {0} " + BLUE + " Skipped" + RESET + ": {1} " + RED + "Error" + RESET + ": {2} " + CYAN + "Time taken" + RESET + ": {3}s  " + GRAY + "Downloading: {4} " + RESET;
         return format(template, success, skipped, error, timeTaken / 1000, downloading);
     }
