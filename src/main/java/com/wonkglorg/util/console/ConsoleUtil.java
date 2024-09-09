@@ -115,12 +115,14 @@ public class ConsoleUtil {
      * @param <T>          type of the value to be returned
      * @return value of the desired type
      */
-    public static synchronized <T> T readInput(Function<String, T> converter, T defaultValue) {
+    public static synchronized <T> T readInput(Function<String, T> converter, T defaultValue, String message, String error) {
         T value;
+        if (message != null && !message.isEmpty()) println(message);
         try {
             String input = scanner.nextLine();
             return converter.apply(input);
         } catch (Exception e) {
+            if (error != null && !error.isEmpty()) println(error);
             return defaultValue;
         }
     }
@@ -157,11 +159,12 @@ public class ConsoleUtil {
      *
      * @param converter function to convert the input to the desired type (must throw an error on
      *                  mismatch)
+     * @param message   message to send
      * @param <T>       type of the value to be returned
      * @return value of the desired type
      */
-    public static synchronized <T> T readInput(Function<String, T> converter) {
-        return readInput(converter, "", "Invalid input, please try again!");
+    public static synchronized <T> T readInput(Function<String, T> converter, String message) {
+        return readInput(converter, message, "Invalid input, please try again!");
     }
 
     /**
@@ -170,12 +173,11 @@ public class ConsoleUtil {
      *
      * @param converter function to convert the input to the desired type (must throw an error on
      *                  mismatch)
-     * @param message   message to send
      * @param <T>       type of the value to be returned
      * @return value of the desired type
      */
-    public static synchronized <T> T readInput(Function<String, T> converter, String message) {
-        return readInput(converter, message, "Invalid input, please try again!");
+    public static synchronized <T> T readInput(Function<String, T> converter) {
+        return readInput(converter, "", "Invalid input, please try again!");
     }
 
 
@@ -187,7 +189,32 @@ public class ConsoleUtil {
      * @param pattern pattern to match the input
      * @return value matching the pattern
      */
-    public static synchronized String readInputWithPattern(String error, Pattern pattern) {
+    public static synchronized String readInputWithPattern(Pattern pattern, String defaultValue, String message, String error) {
+        String value;
+        try {
+            String input = scanner.nextLine();
+            if (pattern.matcher(input).matches()) {
+                return input;
+            } else {
+                println(error);
+            }
+        } catch (Exception ignored) {
+            println(error);
+        }
+
+
+        return defaultValue;
+    }
+
+    /**
+     * Reads a value matching a pattern from the console if the input is invalid, it will display the
+     *
+     * @param pattern pattern to match the input
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return value matching the pattern
+     */
+    public static synchronized String readInputWithPattern(Pattern pattern, String message, String error) {
         String value;
         while (true) {
             try {
@@ -204,7 +231,17 @@ public class ConsoleUtil {
         }
 
         return value;
+    }
 
+    /**
+     * Reads a value matching a pattern from the console if the input is invalid, it will display the
+     *
+     * @param pattern pattern to match the input
+     * @param message message to be displayed before prompting for input
+     * @return value matching the pattern
+     */
+    public static synchronized String readInputWithPattern(Pattern pattern, String message) {
+        return readInputWithPattern(pattern, message, defaultError);
     }
 
     /**
