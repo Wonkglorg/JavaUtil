@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -223,7 +222,7 @@ public class ConsoleUtil {
                     value = input;
                     break;
                 } else {
-                    logger.log(Level.WARNING, error);
+                    println(error);
                 }
             } catch (Exception ignored) {
                 println(error);
