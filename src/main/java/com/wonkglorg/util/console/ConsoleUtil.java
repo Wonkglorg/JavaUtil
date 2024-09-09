@@ -404,6 +404,7 @@ public class ConsoleUtil {
     }
 
     public static synchronized String readString(String defaultInput, String message, String error) {
+        return readInput(String.class, defaultInput, message, error);
     }
 
     /**
