@@ -16,6 +16,7 @@ public class ConsoleUtil {
 
     private static final Logger logger = Logger.getLogger(ConsoleUtil.class.getName());
     private static Scanner scanner = new Scanner(System.in);
+    private static final String defaultError = "Invalid input, please try again!";
 
     private static final Map<Class<?>, Function<String, Object>> converterMappings = new HashMap<>();
 
@@ -46,14 +47,7 @@ public class ConsoleUtil {
      * @return value of the desired type
      */
     public static synchronized <T> T readInput(Class<T> type, T defaultValue) {
-        checkIfConverterExists(type);
-        T value;
-        try {
-            String input = scanner.nextLine();
-            return type.cast(convert(input, type));
-        } catch (Exception e) {
-            return defaultValue;
-        }
+        return readInput(type, defaultValue, "", defaultError);
     }
 
     /**
@@ -84,17 +78,22 @@ public class ConsoleUtil {
         return value;
     }
 
-    /**
-     * Reads a value from the console and returns matching type, with a default error message if the
-     * input is invalid
-     *
-     * @param type desired type
-     * @param <T>  type of the value to be returned
-     * @return value of the desired type
-     */
-    public static synchronized <T> T readInput(Class<T> type, String message) {
-        return readInput(type, message, "Invalid input, please try again!");
+    public static synchronized <T> T readInput(Class<T> type, T defaultValue, String message, String error) {
+        checkIfConverterExists(type);
+        if (message != null && !message.isEmpty()) {
+            println(message);
+        }
+        try {
+            String input = scanner.nextLine();
+            return type.cast(convert(input, type));
+        } catch (Exception e) {
+            if (error != null && !error.isEmpty()) println(error);
+        }
+
+
+        return defaultValue;
     }
+
 
     /**
      * Reads a value from the console and returns matching type, with a default error message if the
@@ -105,7 +104,7 @@ public class ConsoleUtil {
      * @return value of the desired type
      */
     public static synchronized <T> T readInput(Class<T> type) {
-        return readInput(type, "");
+        return readInput(type, "", "Invalid input, please try again!");
     }
 
     /**
@@ -375,6 +374,39 @@ public class ConsoleUtil {
     //------------------------------Specialised------------------------------------------
 
     /**
+     * Reads a {@link String} value from the console repeats until a valid boolean is entered
+     *
+     * @return entered value
+     */
+    public static synchronized String readString() {
+        return readInput(String.class);
+    }
+
+    /**
+     * Reads a {@link String} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @return entered value
+     */
+    public static synchronized String readString(String message) {
+        return readInput(String.class, message);
+    }
+
+    /**
+     * Reads a {@link String} value from the console repeats until a valid boolean is entered
+     *
+     * @param message message to be displayed before prompting for input
+     * @param error   error message to be displayed if the input is invalid
+     * @return entered value
+     */
+    public static synchronized String readString(String message, String error) {
+        return readInput(String.class, message, error);
+    }
+
+    public static synchronized String readString(String defaultInput, String message, String error) {
+    }
+
+    /**
      * Reads a {@link Boolean} value from the console repeats until a valid boolean is entered
      *
      * @return entered value
@@ -390,7 +422,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized boolean readBoolean(String message) {
-        return readInput(Boolean.class, message);
+        return readInput(Boolean.class, message, "Not a valid boolean try again!");
     }
 
     /**
@@ -420,7 +452,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized int readInt(String message) {
-        return readInput(Integer.class, message);
+        return readInput(Integer.class, message, defaultError);
     }
 
     /**
@@ -450,7 +482,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized double readDouble(String message) {
-        return readInput(Double.class, message);
+        return readInput(Double.class, message, defaultError);
     }
 
     /**
@@ -480,7 +512,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized long readLong(String message) {
-        return readInput(Long.class, message);
+        return readInput(Long.class, message, defaultError);
     }
 
     /**
@@ -510,7 +542,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized float readFloat(String message) {
-        return readInput(Float.class, message);
+        return readInput(Float.class, message, defaultError);
     }
 
     /**
@@ -540,7 +572,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized byte readByte(String message) {
-        return readInput(Byte.class, message);
+        return readInput(Byte.class, message, defaultError);
     }
 
     /**
@@ -570,7 +602,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized char readChar(String message) {
-        return readInput(Character.class, message);
+        return readInput(Character.class, message, defaultError);
     }
 
     /**
@@ -600,7 +632,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized Path readPath(String message) {
-        return readInput(Path.class, message);
+        return readInput(Path.class, message, defaultError);
     }
 
     /**
@@ -630,7 +662,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized IPv4 readIPv4(String message) {
-        return readInput(IPv4.class, message);
+        return readInput(IPv4.class, message, defaultError);
     }
 
     /**
@@ -660,7 +692,7 @@ public class ConsoleUtil {
      * @return entered value
      */
     public static synchronized IPv6 readIPv6(String message) {
-        return readInput(IPv6.class, message);
+        return readInput(IPv6.class, message, defaultError);
     }
 
     /**
