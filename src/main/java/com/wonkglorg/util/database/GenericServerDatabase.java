@@ -86,7 +86,7 @@ public class GenericServerDatabase extends Database {
 	 *
 	 * @param newSize the new size of the connection pool
 	 */
-	public void resizePool(int newSize) {
+	public void resizePool(int newSize) throws InterruptedException {
 		if (newSize < 1) {
 			throw new IllegalArgumentException("Pool size must be at least 1");
 		}
@@ -96,7 +96,7 @@ public class GenericServerDatabase extends Database {
 				for (int i = newSize; i < currentSize; i++) {
 					try {
 						connectionPool.take().close();
-					} catch (SQLException | InterruptedException e) {
+					} catch (SQLException e) {
 						logger.log(Level.SEVERE, e.getMessage(), e);
 					}
 				}

@@ -1,10 +1,20 @@
 package com.wonkglorg.util;
 
+import com.wonkglorg.util.reflection.ReflectionDisplay;
 import com.wonkglorg.util.string.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static com.wonkglorg.util.console.ConsoleUtil.println;
+
 class StringUtilTest {
+
+	@Test
+	void reflections() {
+		ReflectionDisplay.printCurrentStack();
+
+		//println(ReflectionDisplay.getCurrentStack());
+	}
 
 	@Test
 	void doesPaddingLeftWork() {

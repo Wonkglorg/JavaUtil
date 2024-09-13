@@ -11,7 +11,7 @@ public class StringTemplater {
 	private Map<String, String> values;
 
 	//todo:jmd add way to add padding to templates or remove parts of the template if the value is
-    // empty
+	// empty
 
 	public StringTemplater() {
 		values = new HashMap<>();
@@ -19,6 +19,14 @@ public class StringTemplater {
 
 	public void put(String key, String value) {
 		values.put(key, value);
+	}
+
+	public void put(String key, Object value) {
+		put(key, value.toString());
+	}
+
+	public void put(String key, int value) {
+		put(key, String.valueOf(value));
 	}
 
 	/**

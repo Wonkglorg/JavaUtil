@@ -19,7 +19,7 @@ public class TestTimings {
 
 	//todo:jmd add a way to test multiple files against eachother? with a report on the results how
 	// they match up
-	//perhaps with a check what type it is?
+	// perhaps with a check what type it is?
 
 	private record RunFunction(String name, Object function, Object... objects) {
 	}
@@ -63,7 +63,7 @@ public class TestTimings {
 			}
 
 			if (runFunction.function instanceof Supplier<?> function) {
-				reports.add(timerWild(runFunction.name, (Supplier<Object>) function, repeats));
+				reports.add(time(runFunction.name, (Supplier<Object>) function, repeats));
 			}
 		}
 
@@ -156,10 +156,6 @@ public class TestTimings {
 			V v, long repeats) {
 		return timeConsumerBase(name, args -> consumer.accept((T) args[0], (U) args[1], (V) args[2]),
 				repeats, t, u, v);
-	}
-
-	private TimingReport timerWild(String name, Supplier<Object> function, long repeats) {
-		return timeConsumerBase(name, args -> function.get(), repeats);
 	}
 
 	public static <T> TimingReport time(String name, Supplier<T> producer, long repeats) {

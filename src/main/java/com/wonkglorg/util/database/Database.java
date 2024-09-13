@@ -39,6 +39,8 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.wonkglorg.util.string.StringUtils.format;
+
 /**
  * @author Wonkglorg
  * <p>
@@ -241,7 +243,8 @@ public abstract class Database implements AutoCloseable {
 					type = component.getType();
 					var mappingFunction = dataTypeMapper.get(type);
 					if (mappingFunction == null) {
-						throw new NullPointerException("Data type does not have a valid mapping function");
+						throw new NullPointerException(
+								format("Data type {1} does not have a " + "valid mapping function", type));
 					}
 
 					if (useIndex) {
