@@ -20,12 +20,12 @@ public class StringUtils {
 	 * Pads a string to the left with spaces if the String is less than the required length
 	 *
 	 * @param str The string to pad
-	 * @param length The total length of the padded string if the padding is less than the length of
+	 * @param totalLength The total length of the padded string if the padding is less than the length of
 	 * the string no additional padding will be added
 	 * @return The padded string
 	 */
-	public static String padLeft(String str, int length) {
-		return padLeft(str, length, ' ');
+	public static String padLeft(final Object str, final int totalLength) {
+		return padLeft(str, totalLength, ' ');
 	}
 
 	/**
@@ -33,23 +33,28 @@ public class StringUtils {
 	 * length
 	 *
 	 * @param str The string to pad
-	 * @param length The total length of the padded string
+	 * @param totalLength The total length of the padded string
 	 * @param character The character to pad with
-	 * @return The padded string
+	 * @return The padded string or just the padding if the specified object is null or empty
 	 */
-	public static String padLeft(String str, int length, char character) {
-		return String.valueOf(character).repeat(Math.max(0, length - str.length())) + str;
+	public static String padLeft(final Object str, final int totalLength, final char character) {
+		if (str == null) {
+			return String.valueOf(character).repeat(Math.max(0, totalLength));
+		}
+		var stringValue = String.valueOf(str);
+		return String.valueOf(character).repeat(Math.max(0, totalLength - stringValue.length()))
+				+ stringValue;
 	}
 
 	/**
 	 * Pads a string to the right with spaces if the String is less than the required length
 	 *
 	 * @param str The string to pad
-	 * @param length The total length of the padded string
+	 * @param totalLength The total length of the padded string
 	 * @return The padded string
 	 */
-	public static String padRight(String str, int length) {
-		return padRight(str, length, ' ');
+	public static String padRight(final Object str, final int totalLength) {
+		return padRight(str, totalLength, ' ');
 	}
 
 	/**
@@ -57,49 +62,57 @@ public class StringUtils {
 	 * length
 	 *
 	 * @param str The string to pad
-	 * @param length The total length of the padded string
+	 * @param totalLength The total length of the padded string
 	 * @param character The character to pad with
-	 * @return The padded string
+	 * @return The padded string or just the padding if the specified object is null or empty
 	 */
-	public static String padRight(String str, int length, char character) {
-		return str + String.valueOf(character).repeat(Math.max(0, length - str.length()));
+	public static String padRight(final Object str, final int totalLength, final char character) {
+		if (str == null) {
+			return String.valueOf(character).repeat(Math.max(0, totalLength));
+		}
+		var stringValue = String.valueOf(str);
+		return stringValue + String.valueOf(character)
+				.repeat(Math.max(0, totalLength - stringValue.length()));
 	}
 
 	/**
 	 * Pads a string to the center with spaces if the String is less than the required length
 	 *
 	 * @param str The string to pad
-	 * @param length The total length of the padded string
+	 * @param totalLength The total length of the padded string
 	 * @return The padded string
 	 */
-	public static String padCenter(String str, int length) {
-		return padCenter(str, length, ' ');
+	public static String padCenter(final Object str, final int totalLength) {
+		return padCenter(str, totalLength, ' ');
 	}
 
 	/**
-	 * Pads a string to the center with a specified character if the String is less than the required
-	 * length
+	 * Pads a string to the center with a specified character if the padding length is less or equal
+	 * to the strings total size no modification will be made.
 	 *
 	 * @param str The string to pad
-	 * @param length The total length of the padded string
+	 * @param totalLength The total length of the padded string
 	 * @param character The character to pad with
-	 * @return The padded string
+	 * @return The padded string or just the padding if the specified object is null or empty
 	 */
-	public static String padCenter(String str, int length, char character) {
-		int padding = 0;
-		if (str != null) {
-			padding = length - str.length();
+	public static String padCenter(final Object str, final int totalLength, final char character) {
+		if (str == null) {
+			return String.valueOf(character).repeat(Math.max(0, totalLength));
 		}
 
+
+		final String stringValue = String.valueOf(str);
+		final int padding = totalLength - stringValue.length();
 		if (padding <= 0) {
-			return str;
+			return stringValue;
 		}
 
-		int leftPadding = padding / 2;
-		int rightPadding = padding - leftPadding;
+		final int leftPadding = padding / 2;
+		final int rightPadding = padding - leftPadding;
 
-		return String.valueOf(character).repeat(leftPadding) + str + String.valueOf(character)
-				.repeat(Math.max(0, rightPadding));
+		String characterString = String.valueOf(character);
+		return characterString.repeat(leftPadding) + stringValue + characterString.repeat(
+				Math.max(0, rightPadding));
 	}
 
 	/**
@@ -110,7 +123,7 @@ public class StringUtils {
 	 * @param offset The offset to start truncating from
 	 * @return The truncated string
 	 */
-	public static String truncate(String str, int length, int offset) {
+	public static String truncate(final String str, final int length, final int offset) {
 		if (str.length() <= length + offset) {
 			return str;
 		}
