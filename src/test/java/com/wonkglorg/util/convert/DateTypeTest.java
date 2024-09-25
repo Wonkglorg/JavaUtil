@@ -1,6 +1,7 @@
 package com.wonkglorg.util.convert;
 
 import com.wonkglorg.util.converter.date.ConverterDate;
+import com.wonkglorg.util.converter.date.DateType;
 import org.junit.jupiter.api.Test;
 
 import static com.wonkglorg.util.converter.date.TimeBuilder.fromTimeString;
@@ -23,8 +24,20 @@ class DateTypeTest {
 		System.out.println("Reverse Conversion: " + revertedString);
 		assertEquals(expectedMillies, result);
 		assertEquals(expectedTime, revertedString);
+	}
 
+	@Test
+	void testMappings(){
+		var result = fromTimeString("10s").toTimeMap(false);
+		System.out.println(result);
 
+		var resultstuff = toTimeString()
+				.typesToShow(DateType.SECOND)
+				.useFullName(true)
+				.inputMillie(100)
+				.showRestAsDecimal(3,true)
+				.toTimeMap();
+		System.out.println(resultstuff);
 	}
 
 	@Test
@@ -60,7 +73,6 @@ class DateTypeTest {
 		assertEquals(10, fromTimeString("10 seconds").toSeconds());
 
 		assertEquals(10000, fromTimeString("10 seconds").toMilliseconds());
-		assertEquals(10000000000L, fromTimeString("10 seconds").toNano());
 	}
 
 	@Test

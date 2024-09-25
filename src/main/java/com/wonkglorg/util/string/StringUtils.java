@@ -4,6 +4,8 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -20,7 +22,9 @@ public class StringUtils {
 	 * Pads a string to the left with spaces if the String is less than the required length
 	 *
 	 * @param str The string to pad
-	 * @param totalLength The total length of the padded string if the padding is less than the length of
+	 * @param totalLength The total length of the padded string if the padding is less than the
+	 * length
+	 * of
 	 * the string no additional padding will be added
 	 * @return The padded string
 	 */
@@ -436,6 +440,12 @@ public class StringUtils {
 		}
 
 		return result.toString();
+	}
+
+	public static String formatDecimals(double decimalValue, int maxDecimalPlaces,
+			boolean trimTrailingZeros) {
+		return new BigDecimal(decimalValue).setScale(maxDecimalPlaces, RoundingMode.HALF_UP)
+				.stripTrailingZeros().toString();
 	}
 
 

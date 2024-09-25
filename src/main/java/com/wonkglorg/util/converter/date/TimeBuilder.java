@@ -1,9 +1,13 @@
 package com.wonkglorg.util.converter.date;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -11,9 +15,12 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TimeBuilder {
-	private static final Pattern pattern = Pattern.compile("(\\d+)\\s*([A-Za-z]+)");
+	private static final Pattern PATTERN = Pattern.compile("(\\d+)\\s*([A-Za-z]+)");
+	private static final Comparator<DateType> COMPARATOR_BIGGEST_TIME_FIRST =
+			Comparator.comparingLong(DateType::getMilliseconds).reversed();
 	protected Function<DateType, Long> timeConversion = DateType::getMilliseconds;
-
+	protected final Set<DateType> allTypes =
+			Arrays.stream(DateType.values()).collect(Collectors.toSet());
 	protected Set<DateType> formats = new HashSet<>();
 
 	public static TimeToStringBuilder toTimeString() {
@@ -30,6 +37,8 @@ public class TimeBuilder {
 		protected long time = 0L;
 		protected boolean forceAllValues = false;
 		protected boolean restToDecimal = false;
+		protected boolean trimTrailingDecimalZeros = true;
+		protected int maxDecimalsToShow = 2;
 		protected boolean useFullName = false;
 		protected boolean capitalizeFirstLetter = true;
 		protected Set<DateType> dateTypes = new HashSet<>();
@@ -66,6 +75,26 @@ public class TimeBuilder {
 			return this;
 		}
 
+		public TimeToStringBuilder showRestAsDecimal(int maxDecimalsToShow) {
+			this.restToDecimal = true;
+			this.maxDecimalsToShow = maxDecimalsToShow;
+			return this;
+		}
+
+		public TimeToStringBuilder showRestAsDecimal(boolean trimTrailingDecimalZeros) {
+			this.restToDecimal = true;
+			this.trimTrailingDecimalZeros = trimTrailingDecimalZeros;
+			return this;
+		}
+
+		public TimeToStringBuilder showRestAsDecimal(int maxDecimalsToShow,
+				boolean trimTrailingDecimalZeros) {
+			this.restToDecimal = true;
+			this.trimTrailingDecimalZeros = trimTrailingDecimalZeros;
+			this.maxDecimalsToShow = maxDecimalsToShow;
+			return this;
+		}
+
 		public TimeToStringBuilder useFullName(boolean capitalizeFirstLetter) {
 			this.useFullName = true;
 			this.capitalizeFirstLetter = capitalizeFirstLetter;
@@ -77,7 +106,7 @@ public class TimeBuilder {
 			return this;
 		}
 
-		public TimeToStringBuilder setTypes(DateType... types) {
+		public TimeToStringBuilder typesToShow(DateType... types) {
 			dateTypes.addAll(Arrays.asList(types));
 			return this;
 		}
@@ -88,6 +117,7 @@ public class TimeBuilder {
 		}
 
 
+		@SuppressWarnings("MalformedFormatString")
 		private String convertTimeToString(long time, Function<DateType, Long> timeConversion,
 				boolean useFullNames, boolean capitalizeFirstLetter, boolean forceAllTypes,
 				boolean restToDecimal, Set<DateType> formats) {
@@ -124,13 +154,53 @@ public class TimeBuilder {
 				if (restToDecimal && time > 0 && isLastDateType) {
 					double decimalValue = (double) time / dateTypeTime;
 					String name = timePostfix(dateType, 3, useFullNames, capitalizeFirstLetter);
-					sb.append("%.2f%s".formatted(decimalValue, name));
+					sb.append("%s%s".formatted(
+							formatDecimal(decimalValue, maxDecimalsToShow, trimTrailingDecimalZeros), name));
 				}
 			}
 
 			return sb.toString().
 
 					trim();
+		}
+
+		public Map<DateType, Double> toTimeMap() {
+			Map<DateType, Double> timeMap = new EnumMap<>(DateType.class);
+			List<DateType> dateList;
+			if (formats.isEmpty()) {
+				dateList = allTypes.stream().sorted(comparatorBiggestTimeFirst).toList();
+			} else {
+				dateList = formats.stream().sorted(comparatorBiggestTimeFirst).toList();
+			}
+			boolean isLastDateType;
+			for (int i = 0; i < dateList.size(); i++) {
+				DateType dateType = dateList.get(i);
+				long dateTypeTime = timeConversion.apply(dateType);
+				double value = time / dateTypeTime;
+				time %= dateTypeTime;
+
+				if (value > 0 || forceAllValues) {
+					timeMap.put(dateType, value);
+				}
+				isLastDateType = (i == dateList.size() - 1);
+
+				if (restToDecimal && time > 0 && isLastDateType) {
+					double decimalValue = (double) time / dateTypeTime;
+					timeMap.put(dateType, decimalValue);
+				}
+			}
+			return timeMap;
+		}
+
+		private String formatDecimal(double decimalValue, int maxDecimalPlaces,
+				boolean trimTrailingZeros) {
+
+			BigDecimal bigDecimal =
+					BigDecimal.valueOf(decimalValue).setScale(maxDecimalPlaces, RoundingMode.HALF_UP);
+			if (trimTrailingZeros) {
+				return bigDecimal.stripTrailingZeros().toPlainString();
+			}
+			return bigDecimal.toPlainString();
 		}
 
 		private String timePostfix(DateType type, long value, boolean useFullName,
@@ -151,7 +221,6 @@ public class TimeBuilder {
 		}
 	}
 
-
 	public static class TimeFromStringBuilder extends TimeBuilder {
 		private String timeString;
 
@@ -162,15 +231,6 @@ public class TimeBuilder {
 		public TimeFromStringBuilder input(String timeString) {
 			this.timeString = timeString;
 			return this;
-		}
-
-		/**
-		 * Converts the valid String to Nanoseconds
-		 *
-		 * @throws ArithmeticException if numeric overflow occurs
-		 */
-		public long toNano() {
-			return convertTo(DateType::getNanos);
 		}
 
 		/**
@@ -197,7 +257,7 @@ public class TimeBuilder {
 				return 0;
 			}
 
-			Matcher matcher = pattern.matcher(timeString);
+			Matcher matcher = PATTERN.matcher(timeString);
 			while (matcher.find()) {
 				long value = Long.parseLong(matcher.group(1));
 				String suffix = matcher.group(2);
@@ -212,6 +272,29 @@ public class TimeBuilder {
 
 			}
 			return time;
+		}
+
+		public Map<DateType, Double> toTimeMap(boolean forceAllValues) {
+			long time = toMilliseconds();
+			Map<DateType, Double> timeMap = new EnumMap<>(DateType.class);
+			List<DateType> dateList;
+			if (formats.isEmpty()) {
+				dateList = allTypes.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList();
+			} else {
+				dateList = formats.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList();
+			}
+
+			for (DateType dateType : dateList) {
+				long conversionTypeValue = timeConversion.apply(dateType);
+				//this is intended
+				double value = time / conversionTypeValue;
+				time %= conversionTypeValue;
+
+				if (value > 0 || forceAllValues) {
+					timeMap.put(dateType, value);
+				}
+			}
+			return timeMap;
 		}
 
 

@@ -7,8 +7,9 @@ import java.time.temporal.ChronoUnit;
  * Enum for common date types
  */
 public enum DateType {
-	NANO("n", "Nanosecond", Duration.ofNanos(1)),
-	MICRO("µ", "Microsecond", Duration.ofNanos(1000)),
+	//unused
+	//NANO("n", "Nanosecond", Duration.ofNanos(1)),
+	//MICRO("µ", "Microsecond", Duration.ofNanos(1000)),
 	MILLISECOND("ms", "Millisecond", Duration.ofMillis(1)),
 	SECOND("s", "Second", Duration.ofSeconds(1)),
 	MINUTE("m", "Minute", Duration.ofMinutes(1)),
@@ -59,13 +60,19 @@ public enum DateType {
 		return duration.toMillis();
 	}
 
+	//unused as it had too many easy exceptions it could throw,
+	// if nano seconds are really needed use some existing system
+	// this isn't meant to be nano accurate just useful
 	/**
 	 * @return the represented dateType in nanoSeconds
 	 * @throws ArithmeticException if numeric overflow occurs
 	 */
+	/*
 	public long getNanos() {
 		return duration.toNanos();
 	}
+
+	 */
 
 	/**
 	 * @return the representing dateTypes full name singular
@@ -79,8 +86,8 @@ public enum DateType {
 	 */
 	public ChronoUnit toChronoUnit() {
 		return switch (this) {
-			case NANO -> ChronoUnit.NANOS;
-			case MICRO -> ChronoUnit.MICROS;
+			//case NANO -> ChronoUnit.NANOS;
+			//case MICRO -> ChronoUnit.MICROS;
 			case MILLISECOND -> ChronoUnit.MILLIS;
 			case SECOND -> ChronoUnit.SECONDS;
 			case MINUTE -> ChronoUnit.MINUTES;
