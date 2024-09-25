@@ -42,51 +42,51 @@ class IpV4Test {
 
 	@Test
 	void testNetworkAddress() {
-		IPv4 ip = IPv4.of(192, 168, 1, 10);
-		IPv4 subnetMask = IPv4.of(255, 255, 255, 0);
+		IPv4 validIp = IPv4.of(192, 168, 1, 10);
+		IPv4 validSubnetMask = IPv4.of(255, 255, 255, 0);
 		IPv4 expectedNetworkAddress = IPv4.of(192, 168, 1, 0);
 
-		int cidr = 24;
+		int validCidr = 24;
 
 		//check for null inputs
 		assertThrows(RuntimeException.class, () -> IPv4.getNetworkAddress(null, null));
-		assertThrows(RuntimeException.class, () -> IPv4.getNetworkAddress(ip, null));
-		assertThrows(RuntimeException.class, () -> IPv4.getNetworkAddress(null, subnetMask));
+		assertThrows(RuntimeException.class, () -> IPv4.getNetworkAddress(validIp, null));
+		assertThrows(RuntimeException.class, () -> IPv4.getNetworkAddress(null, validSubnetMask));
 
 
 		//valid calculations check
-		assertEquals(expectedNetworkAddress, ip.getNetworkAddress(subnetMask));
-		assertEquals(expectedNetworkAddress, ip.getNetworkAddress(cidr));
-		assertEquals(expectedNetworkAddress, IPv4.getNetworkAddress(ip, subnetMask));
-		assertEquals(expectedNetworkAddress, IPv4.getNetworkAddress(ip, cidr));
+		assertEquals(expectedNetworkAddress, validIp.getNetworkAddress(validSubnetMask));
+		assertEquals(expectedNetworkAddress, validIp.getNetworkAddress(validCidr));
+		assertEquals(expectedNetworkAddress, IPv4.getNetworkAddress(validIp, validSubnetMask));
+		assertEquals(expectedNetworkAddress, IPv4.getNetworkAddress(validIp, validCidr));
 
 		//cidr bounds check
-		assertThrows(IllegalArgumentException.class, () -> ip.getNetworkAddress(-1));
-		assertThrows(IllegalArgumentException.class, () -> ip.getNetworkAddress(33));
+		assertThrows(IllegalArgumentException.class, () -> validIp.getNetworkAddress(-1));
+		assertThrows(IllegalArgumentException.class, () -> validIp.getNetworkAddress(33));
 	}
 
 	@Test
 	void testBroadcastAddress() {
-		IPv4 ip = IPv4.of(192, 168, 1, 10);
-		IPv4 subnetMask = IPv4.of(255, 255, 255, 0);
+		IPv4 validIp = IPv4.of(192, 168, 1, 10);
+		IPv4 validSubnetMask = IPv4.of(255, 255, 255, 0);
 		IPv4 expectedBroadcastAddress = IPv4.of(192, 168, 1, 255);
 
-		int cidr = 24;
+		int validCidr = 24;
 
 		//check for null inputs
 		assertThrows(RuntimeException.class, () -> IPv4.getBroadcastAddress(null, null));
-		assertThrows(RuntimeException.class, () -> IPv4.getBroadcastAddress(ip, null));
-		assertThrows(RuntimeException.class, () -> IPv4.getBroadcastAddress(null, subnetMask));
+		assertThrows(RuntimeException.class, () -> IPv4.getBroadcastAddress(validIp, null));
+		assertThrows(RuntimeException.class, () -> IPv4.getBroadcastAddress(null, validSubnetMask));
 
 		//valid calculations check
-		assertEquals(expectedBroadcastAddress, ip.getBroadcastAddress(subnetMask));
-		assertEquals(expectedBroadcastAddress, ip.getBroadcastAddress(cidr));
-		assertEquals(expectedBroadcastAddress, IPv4.getBroadcastAddress(ip, subnetMask));
-		assertEquals(expectedBroadcastAddress, IPv4.getBroadcastAddress(ip, cidr));
+		assertEquals(expectedBroadcastAddress, validIp.getBroadcastAddress(validSubnetMask));
+		assertEquals(expectedBroadcastAddress, validIp.getBroadcastAddress(validCidr));
+		assertEquals(expectedBroadcastAddress, IPv4.getBroadcastAddress(validIp, validSubnetMask));
+		assertEquals(expectedBroadcastAddress, IPv4.getBroadcastAddress(validIp, validCidr));
 
 		//cidr bounds check
-		assertThrows(IllegalArgumentException.class, () -> ip.getBroadcastAddress(-1));
-		assertThrows(IllegalArgumentException.class, () -> ip.getBroadcastAddress(33));
+		assertThrows(IllegalArgumentException.class, () -> validIp.getBroadcastAddress(-1));
+		assertThrows(IllegalArgumentException.class, () -> validIp.getBroadcastAddress(33));
 	}
 
 }
