@@ -27,24 +27,49 @@ public enum DateType {
 	MILLENNIA("ML", "Millennia", Duration.ofDays(365 * 1000L)),
 	/** An era set based on 365 day year and a million years */
 	ERA("E", "Era", Duration.ofDays(365 * 1000000L));
-	private final String preset;
+	private final String postfix;
 	private final String fullName;
 	private final Duration duration;
 
-	DateType(String preset, String fullName, Duration duration) {
-		this.preset = preset;
+	DateType(String postfix, String fullName, Duration duration) {
+		this.postfix = postfix;
 		this.fullName = fullName;
 		this.duration = duration;
 	}
 
-	public String getPreset() {
-		return preset;
+	/**
+	 * @return This values representing postfix
+	 */
+	public String getPostfix() {
+		return postfix;
 	}
 
+	/**
+	 * @return the represented dateType in seconds
+	 */
+	public long getSeconds() {
+		return duration.getSeconds();
+	}
+
+	/**
+	 * @return the represented dateType in milliseconds
+	 * @throws ArithmeticException if numeric overflow occurs
+	 */
 	public long getMilliseconds() {
 		return duration.toMillis();
 	}
 
+	/**
+	 * @return the represented dateType in nanoSeconds
+	 * @throws ArithmeticException if numeric overflow occurs
+	 */
+	public long getNanos() {
+		return duration.toNanos();
+	}
+
+	/**
+	 * @return the representing dateTypes full name singular
+	 */
 	public String getFullName() {
 		return fullName;
 	}
