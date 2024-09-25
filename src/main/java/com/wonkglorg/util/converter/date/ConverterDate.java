@@ -9,12 +9,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @SuppressWarnings("unused")
-public class DateConverter {
+public class ConverterDate {
 	private static final Pattern pattern = Pattern.compile("(\\d+)([A-Za-z]+)");
 	private static final Comparator<DateType> comparatorBiggestTimeFirst =
 			Comparator.comparingLong(DateType::getMilliseconds).reversed();
 
-	private DateConverter() {
+	private ConverterDate() {
 
 	}
 
