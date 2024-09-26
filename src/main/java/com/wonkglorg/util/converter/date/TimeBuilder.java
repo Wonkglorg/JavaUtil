@@ -56,6 +56,21 @@ public class TimeBuilder {
 		protected Set<DateType> formats = new HashSet<>();
 		protected Function<DateType, Long> timeConversion = DateType::getMilliseconds;
 
+		private TimeToStringBuilder(long time, boolean forceAllValues, boolean restToDecimal,
+				boolean trimTrailingDecimalZeros, int maxDecimalsToShow, boolean useFullName,
+				boolean capitalizeFirstLetter, Set<DateType> formats,
+				Function<DateType, Long> timeConversion) {
+			this.time = time;
+			this.forceAllValues = forceAllValues;
+			this.restToDecimal = restToDecimal;
+			this.trimTrailingDecimalZeros = trimTrailingDecimalZeros;
+			this.maxDecimalsToShow = maxDecimalsToShow;
+			this.useFullName = useFullName;
+			this.capitalizeFirstLetter = capitalizeFirstLetter;
+			this.formats = formats;
+			this.timeConversion = timeConversion;
+		}
+
 		/**
 		 * What timeunit size the input should be treated as.
 		 *
