@@ -1,11 +1,11 @@
 package com.wonkglorg.util.convert;
 
-import com.wonkglorg.util.converter.date.ConverterDate;
 import org.junit.jupiter.api.Test;
 
 import static com.wonkglorg.util.converter.date.TimeBuilder.fromTimeString;
 import static com.wonkglorg.util.converter.date.TimeBuilder.toTimeString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DateTypeTest {
 
@@ -74,8 +74,9 @@ class DateTypeTest {
 		assertEquals(10100, fromTimeString("10.1 seconds").toMilliseconds());
 	}
 
-	@Test
+	@Test()
 	void showNoValueOnNegativeTime() {
-		assertEquals("", ConverterDate.toTimeString(-4));
+		assertThrows(IllegalArgumentException.class, () -> toTimeString().inputMillie(-4).build(),
+				"Time cannot be less than 0!");
 	}
 }
