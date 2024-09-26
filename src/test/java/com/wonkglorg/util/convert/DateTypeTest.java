@@ -1,5 +1,6 @@
 package com.wonkglorg.util.convert;
 
+import com.wonkglorg.util.converter.date.DateType;
 import org.junit.jupiter.api.Test;
 
 import static com.wonkglorg.util.converter.date.TimeBuilder.fromTimeString;
@@ -34,7 +35,10 @@ class DateTypeTest {
 
 
 		var resultstuff =
-				toTimeString().useFullName(true).inputMillie(10).showRestAsDecimal(3, false).toTimeMap();
+				toTimeString().useFullName(true)
+						.inputMillie(10)
+						.decimal(true, 3)
+						.toTimeMap();
 		System.out.println(resultstuff);
 	}
 
@@ -73,6 +77,13 @@ class DateTypeTest {
 		assertEquals(10100, fromTimeString("10,1 seconds").toMilliseconds());
 		assertEquals(10100, fromTimeString("10.1 seconds").toMilliseconds());
 		assertEquals(10, fromTimeString("10 seconds").toMilliseconds());
+	}
+
+	@Test
+	void decimalFormatting(){
+		System.out.println(toTimeString().inputMillie(1030)
+				.typesToShow(DateType.SECOND).build());
+
 	}
 
 	@Test()
