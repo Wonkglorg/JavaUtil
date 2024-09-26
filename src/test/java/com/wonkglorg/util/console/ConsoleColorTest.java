@@ -2,12 +2,12 @@ package com.wonkglorg.util.console;
 
 import org.junit.jupiter.api.Test;
 
-public class ConsoleColorTest {
+class ConsoleColorTest {
 
-    @Test
-    public void testColors() {
-        for (ConsoleColor color : ConsoleColor.values()) {
-            System.out.println(color + color.name() + ConsoleColor.RESET + " ");
-        }
-    }
+	@Test
+	void testColors() {
+		for (ConsoleColor color : ConsoleColor.values()) {
+			System.out.println(color + color.name() + ConsoleColor.RESET + " ");
+		}
+	}
 }

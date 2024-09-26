@@ -15,13 +15,11 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TimeBuilder {
-	private static final Pattern PATTERN = Pattern.compile("(\\d+)\\s*([A-Za-z]+)");
+	private static final Pattern PATTERN = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*([a-zA-Z]+)");
 	private static final Comparator<DateType> COMPARATOR_BIGGEST_TIME_FIRST =
 			Comparator.comparingLong(DateType::getMilliseconds).reversed();
-	protected Function<DateType, Long> timeConversion = DateType::getMilliseconds;
 	protected final Set<DateType> allTypes =
 			Arrays.stream(DateType.values()).collect(Collectors.toSet());
-	protected Set<DateType> formats = new HashSet<>();
 
 	public static TimeToStringBuilder toTimeString() {
 		return new TimeToStringBuilder();
@@ -32,8 +30,6 @@ public class TimeBuilder {
 	}
 
 	public static class TimeToStringBuilder extends TimeBuilder {
-		private static final Comparator<DateType> comparatorBiggestTimeFirst =
-				Comparator.comparingLong(DateType::getMilliseconds).reversed();
 		protected long time = 0L;
 		protected boolean forceAllValues = false;
 		protected boolean restToDecimal = false;
@@ -41,22 +37,14 @@ public class TimeBuilder {
 		protected int maxDecimalsToShow = 2;
 		protected boolean useFullName = false;
 		protected boolean capitalizeFirstLetter = true;
-		protected Set<DateType> dateTypes = new HashSet<>();
-		private final Set<DateType> allTypes =
-				Arrays.stream(DateType.values()).collect(Collectors.toSet());
-
+		protected Set<DateType> formats = new HashSet<>();
+		protected Function<DateType, Long> timeConversion = DateType::getMilliseconds;
 
 		public TimeToStringBuilder input(long time, Function<DateType, Long> timeConversion) {
 			this.time = time;
 			this.timeConversion = timeConversion;
 			return this;
 		}
-
-		public TimeToStringBuilder inputNanos(long nanoseconds) {
-			this.time = nanoseconds;
-			return this;
-		}
-
 
 		public TimeToStringBuilder inputMillie(long millieSeconds) {
 			this.time = millieSeconds;
@@ -101,19 +89,26 @@ public class TimeBuilder {
 			return this;
 		}
 
+		/**
+		 * Forces all types to be shown in the resul even if they aren't relevant to the current
+		 * results
+		 * size (will not apply if a specified {@link #typesToShow(DateType...)} is given
+		 *
+		 * @return
+		 */
 		public TimeToStringBuilder forceShowAllTypes() {
 			this.forceAllValues = true;
 			return this;
 		}
 
 		public TimeToStringBuilder typesToShow(DateType... types) {
-			dateTypes.addAll(Arrays.asList(types));
+			formats.addAll(Arrays.asList(types));
 			return this;
 		}
 
 		public String build() {
 			return convertTimeToString(time, timeConversion, useFullName, capitalizeFirstLetter,
-					forceAllValues, restToDecimal, dateTypes.isEmpty() ? allTypes : dateTypes);
+					forceAllValues, restToDecimal, formats.isEmpty() ? allTypes : formats);
 		}
 
 
@@ -121,7 +116,7 @@ public class TimeBuilder {
 		private String convertTimeToString(long time, Function<DateType, Long> timeConversion,
 				boolean useFullNames, boolean capitalizeFirstLetter, boolean forceAllTypes,
 				boolean restToDecimal, Set<DateType> formats) {
-			List<DateType> dateList = formats.stream().sorted(comparatorBiggestTimeFirst).toList();
+			List<DateType> dateList = formats.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList();
 
 			StringBuilder sb = new StringBuilder();
 			boolean isLastDateType;
@@ -168,20 +163,27 @@ public class TimeBuilder {
 			Map<DateType, Double> timeMap = new EnumMap<>(DateType.class);
 			List<DateType> dateList;
 			if (formats.isEmpty()) {
-				dateList = allTypes.stream().sorted(comparatorBiggestTimeFirst).toList();
+				dateList = allTypes.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList();
 			} else {
-				dateList = formats.stream().sorted(comparatorBiggestTimeFirst).toList();
+				dateList = formats.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList();
 			}
 			boolean isLastDateType;
 			for (int i = 0; i < dateList.size(); i++) {
 				DateType dateType = dateList.get(i);
 				long dateTypeTime = timeConversion.apply(dateType);
-				double value = time / dateTypeTime;
+				if (dateTypeTime <= 0) {
+					if (forceAllValues) {
+						timeMap.put(dateType, 0.0);
+					}
+					continue;
+				}
+				long value = time / dateTypeTime;
 				time %= dateTypeTime;
 
 				if (value > 0 || forceAllValues) {
-					timeMap.put(dateType, value);
+					timeMap.put(dateType, (double) value);
 				}
+
 				isLastDateType = (i == dateList.size() - 1);
 
 				if (restToDecimal && time > 0 && isLastDateType) {
@@ -223,6 +225,8 @@ public class TimeBuilder {
 
 	public static class TimeFromStringBuilder extends TimeBuilder {
 		private String timeString;
+		protected Set<DateType> formats = new HashSet<>();
+		protected Function<DateType, Long> timeConversion = DateType::getMilliseconds;
 
 		public TimeFromStringBuilder(String timeString) {
 			this.timeString = timeString;
@@ -259,19 +263,33 @@ public class TimeBuilder {
 
 			Matcher matcher = PATTERN.matcher(timeString);
 			while (matcher.find()) {
-				long value = Long.parseLong(matcher.group(1));
+
+				double value = parseValue(matcher.group(1));
 				String suffix = matcher.group(2);
 
 				for (DateType dateType : DateType.values()) {
 					if (suffix.equals(dateType.getPostfix()) || suffix.equalsIgnoreCase(
 							dateType.getFullName()) || suffix.equalsIgnoreCase(dateType.getFullName() + "s")) {
-						time += value * conversion.apply(dateType);
+						//IMPORTANT cast to long here or precision loss often leads to the number being larger than expectd by a few millies.
+						time += (long) (value * conversion.apply(dateType));
 						break;
 					}
 				}
 
 			}
 			return time;
+		}
+
+		private double parseValue(String stringValue) {
+			stringValue = stringValue.replace(",", ".");
+			double value;
+			try {
+				value = Long.parseLong(stringValue);
+			} catch (NumberFormatException e) {
+				value = Double.parseDouble(stringValue);
+			}
+			return value;
+
 		}
 
 		public Map<DateType, Double> toTimeMap(boolean forceAllValues) {
@@ -283,12 +301,10 @@ public class TimeBuilder {
 			} else {
 				dateList = formats.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList();
 			}
-
 			for (DateType dateType : dateList) {
-				long conversionTypeValue = timeConversion.apply(dateType);
-				//this is intended
-				double value = time / conversionTypeValue;
-				time %= conversionTypeValue;
+				long dateTypeTime = dateType.getMilliseconds();
+				double value = time / dateTypeTime;
+				time %= dateTypeTime;
 
 				if (value > 0 || forceAllValues) {
 					timeMap.put(dateType, value);
@@ -299,6 +315,5 @@ public class TimeBuilder {
 
 
 	}
-
 
 }

@@ -10,13 +10,6 @@ import static com.wonkglorg.util.console.ConsoleUtil.println;
 class StringUtilTest {
 
 	@Test
-	void reflections() {
-		ReflectionDisplay.printCurrentStack();
-
-		//println(ReflectionDisplay.getCurrentStack());
-	}
-
-	@Test
 	void doesPaddingLeftWork() {
 		var result1 = StringUtils.padLeft("Test", 6);
 		Assertions.assertEquals("  Test", result1);
