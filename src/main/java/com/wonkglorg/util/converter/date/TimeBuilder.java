@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,7 @@ public class TimeBuilder {
 	 * by any amount of spaces and uppercase / lowercase letters
 	 */
 	private static final Pattern PATTERN = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*([a-zA-Z]+)");
+	private static final Map<String,List<DateType>> cachedDateTypes = new HashMap<>();
 	/**
 	 * Comparator for datetype sizes
 	 */
@@ -249,6 +251,7 @@ public class TimeBuilder {
 
 		/**
 		 * Returns a map of values making up the string
+		 *
 		 * @return the returned map
 		 */
 		public Map<DateType, Double> toTimeMap() {
@@ -392,19 +395,23 @@ public class TimeBuilder {
 		 */
 		private double parseValue(String stringValue) {
 			stringValue = stringValue.replace(",", ".");
-			double value;
 			try {
-				value = Long.parseLong(stringValue);
+				return Long.parseLong(stringValue);
 			} catch (NumberFormatException e) {
-				value = Double.parseDouble(stringValue);
+				try {
+					return Double.parseDouble(stringValue);
+				} catch (NumberFormatException ex) {
+					throw new IllegalArgumentException("Invalid value for time parsing: " + stringValue);
+				}
 			}
-			return value;
-
 		}
+
 
 		/**
 		 * Returns a map of values making up the string
-		 * @param forceAllValues if true returns all values despite them not being needed to represent this string
+		 *
+		 * @param forceAllValues if true returns all values despite them not being needed to represent
+		 * this string
 		 * @return the returned map
 		 */
 		public Map<DateType, Double> toTimeMap(boolean forceAllValues) {
