@@ -240,7 +240,6 @@ public class TimeBuilder {
 
 				if (value > 0 || forceAllValues) {
 					timeMap.put(dateType, (double) value);
-					continue;
 				}
 
 

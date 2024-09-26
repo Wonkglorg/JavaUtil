@@ -28,18 +28,10 @@ class DateTypeTest {
 	@Test
 	void testMappings() {
 		var result = fromTimeString("10s").toTimeMap(false);
-		System.out.println(result);
+		assertEquals("{SECOND=10.0}", result.toString());
 
-		var resultTime = toTimeString().inputSeconds(10).toTimeMap();
-		System.out.println(resultTime);
-
-
-		var resultstuff =
-				toTimeString().useFullName(true)
-						.inputMillie(10)
-						.decimal(3,true)
-						.toTimeMap();
-		System.out.println(resultstuff);
+		var resultTime = toTimeString().inputMillie(1039).typesToShow(DateType.SECOND).toTimeMap();
+		assertEquals("{SECOND=1.039}", resultTime.toString());
 	}
 
 	@Test
