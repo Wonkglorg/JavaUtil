@@ -5,25 +5,23 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
+import java.util.function.ToLongFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TimeBuilder {
 	/**
-	 * Pattern to match any valid int + datetype pair checks for numbers or decimal numbers followed
+	 * Pattern to match any valid int + datatype pair checks for numbers or decimal numbers followed
 	 * by any amount of spaces and uppercase / lowercase letters
 	 */
 	private static final Pattern PATTERN = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*([a-zA-Z]+)");
-	private static final Map<String,List<DateType>> cachedDateTypes = new HashMap<>();
 	/**
-	 * Comparator for datetype sizes
+	 * Comparator for datatype sizes
 	 */
 	private static final Comparator<DateType> COMPARATOR_BIGGEST_TIME_FIRST =
 			Comparator.comparingLong(DateType::getMilliseconds).reversed();
@@ -31,7 +29,7 @@ public class TimeBuilder {
 			Arrays.stream(DateType.values()).collect(Collectors.toSet());
 
 	/**
-	 * @return creates a timestring builder to convert time in number format to a human readable
+	 * @return creates a time-string builder to convert time in number format to a human-readable
 	 * time.
 	 */
 	public static TimeToStringBuilder toTimeString() {
@@ -39,22 +37,22 @@ public class TimeBuilder {
 	}
 
 	/**
-	 * @return creates a timestring builder to convert human readable time to its number format.
+	 * @return creates a time-string builder to convert human-readable time to its number format.
 	 */
 	public static TimeFromStringBuilder fromTimeString(String timeString) {
 		return new TimeFromStringBuilder(timeString);
 	}
 
 	public static class TimeToStringBuilder extends TimeBuilder {
-		protected long time = 0L;
-		protected boolean forceAllValues = false;
-		protected boolean restToDecimal = false;
-		protected boolean trimTrailingDecimalZeros = true;
-		protected int maxDecimalsToShow = 2;
-		protected boolean useFullName = false;
-		protected boolean capitalizeFirstLetter = true;
-		protected Set<DateType> formats = new HashSet<>();
-		protected Function<DateType, Long> timeConversion = DateType::getMilliseconds;
+		private long time = 0L;
+		private boolean forceAllValues = false;
+		private boolean restToDecimal = false;
+		private boolean trimTrailingDecimalZeros = true;
+		private int maxDecimalsToShow = 2;
+		private boolean useFullName = false;
+		private boolean capitalizeFirstLetter = true;
+		private final Set<DateType> formats = new HashSet<>();
+		private ToLongFunction<DateType> timeConversion = DateType::getMilliseconds;
 
 		/**
 		 * What timeunit size the input should be treated as.
@@ -62,7 +60,7 @@ public class TimeBuilder {
 		 * @param time the time to set
 		 * @param timeConversion conversion to use
 		 */
-		public TimeToStringBuilder input(long time, Function<DateType, Long> timeConversion) {
+		public TimeToStringBuilder input(long time, ToLongFunction<DateType> timeConversion) {
 			this.time = time;
 			this.timeConversion = timeConversion;
 			return this;
@@ -155,8 +153,6 @@ public class TimeBuilder {
 		 * Forces all types to be shown in the resul even if they aren't relevant to the current
 		 * results
 		 * size (will not apply if a specified {@link #typesToShow(DateType...)} is given
-		 *
-		 * @return
 		 */
 		public TimeToStringBuilder forceShowAllTypes() {
 			this.forceAllValues = true;
@@ -187,7 +183,7 @@ public class TimeBuilder {
 
 
 		/**
-		 * Helper method to convert the time to a human readable format with customisations
+		 * Helper method to convert the time to a human-readable format with customisations
 		 *
 		 * @param time the time to convert
 		 * @param timeConversion the conversion to apply to the datatype
@@ -201,9 +197,9 @@ public class TimeBuilder {
 		 * @param formats which formats to show if non are selected and forceAllTypes is off splits
 		 * them
 		 * into all formats that this value fits in biggest to smallest
-		 * @return the human readable time string.
+		 * @return the human-readable time string.
 		 */
-		private String convertTimeToString(long time, Function<DateType, Long> timeConversion,
+		private String convertTimeToString(long time, ToLongFunction<DateType> timeConversion,
 				boolean useFullNames, boolean capitalizeFirstLetter, boolean forceAllTypes,
 				boolean restToDecimal, Set<DateType> formats) {
 			List<DateType> dateList = formats.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList();
@@ -213,7 +209,7 @@ public class TimeBuilder {
 
 			for (int i = 0; i < dateList.size(); i++) {
 				DateType dateType = dateList.get(i);
-				long dateTypeTime = timeConversion.apply(dateType);
+				long dateTypeTime = timeConversion.applyAsLong(dateType);
 
 				if (dateTypeTime <= 0) {
 					if (forceAllTypes) {
@@ -265,7 +261,7 @@ public class TimeBuilder {
 			boolean isLastDateType;
 			for (int i = 0; i < dateList.size(); i++) {
 				DateType dateType = dateList.get(i);
-				long dateTypeTime = timeConversion.apply(dateType);
+				long dateTypeTime = timeConversion.applyAsLong(dateType);
 				if (dateTypeTime <= 0) {
 					if (forceAllValues) {
 						timeMap.put(dateType, 0.0);
@@ -338,7 +334,7 @@ public class TimeBuilder {
 		}
 
 		/**
-		 * Converts the valid String to Millieseconds
+		 * Converts the valid String to Milliseconds
 		 *
 		 * @throws ArithmeticException if numeric overflow occurs
 		 */
@@ -361,7 +357,7 @@ public class TimeBuilder {
 		 * @param conversion the conversion to use
 		 * @return the calculated value
 		 */
-		private long convertTo(Function<DateType, Long> conversion) {
+		private long convertTo(ToLongFunction<DateType> conversion) {
 			long time = 0;
 			if (timeString == null || timeString.isBlank()) {
 				return 0;
@@ -377,8 +373,8 @@ public class TimeBuilder {
 					if (suffix.equals(dateType.getPostfix()) || suffix.equalsIgnoreCase(
 							dateType.getFullName()) || suffix.equalsIgnoreCase(dateType.getFullName() + "s")) {
 						//IMPORTANT cast to long here or precision loss often leads to the number being larger
-						// than expectd by a few millies.
-						time += (long) (value * conversion.apply(dateType));
+						// than expected by a few millis.
+						time += (long) (value * conversion.applyAsLong(dateType));
 						break;
 					}
 				}

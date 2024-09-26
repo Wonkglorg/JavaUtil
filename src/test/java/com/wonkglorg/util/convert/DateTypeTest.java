@@ -72,6 +72,7 @@ class DateTypeTest {
 		assertEquals(10000, fromTimeString("10 seconds").toMilliseconds());
 		assertEquals(10100, fromTimeString("10,1 seconds").toMilliseconds());
 		assertEquals(10100, fromTimeString("10.1 seconds").toMilliseconds());
+		assertEquals(10, fromTimeString("10 seconds").toMilliseconds());
 	}
 
 	@Test()
