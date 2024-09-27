@@ -105,10 +105,6 @@ public class TestTimings {
 				valueSupplier.get());
 	}
 
-	public static <T, R> TimingReport time(String name, Function<T, R> function, T t, long repeats) {
-		return timeFunctionBase(name, args -> function.apply((T) args[0]), repeats, t);
-	}
-
 	private TimingReport time(String name, BiFunction<Object, Object, Object> function, long repeats,
 			Object[] objects) {
 		return timeFunctionBase(name, args -> function.apply(args[0], args[1]), repeats, objects);
