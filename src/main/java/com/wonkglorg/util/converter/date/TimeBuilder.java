@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ public class TimeBuilder {
 			Comparator.comparingLong(DateType::getMilliseconds).reversed();
 	protected final Set<DateType> allTypes =
 			Arrays.stream(DateType.values()).collect(Collectors.toSet());
+
+	protected static final Map<Set<DateType>, List<DateType>> cachedTypes = new HashMap<>();
 
 	/**
 	 * @return creates a time-string builder to convert time in number format to a human-readable
@@ -139,7 +142,7 @@ public class TimeBuilder {
 		 */
 		public String build() {
 			if (time < 0) {
-				throw new IllegalArgumentException("Time cannot be less than 0!");
+				throw new IllegalArgumentException("Time cannot be less than 0 but was " + time + "!");
 			}
 			return convertTimeToString(time, timeConversion, useFullName, capitalizeFirstLetter,
 					forceAllValues, formats.isEmpty() ? allTypes : formats);
@@ -164,7 +167,8 @@ public class TimeBuilder {
 		private String convertTimeToString(long time, ToLongFunction<DateType> timeConversion,
 				boolean useFullNames, boolean capitalizeFirstLetter, boolean forceAllTypes,
 				Set<DateType> formats) {
-			List<DateType> dateList = formats.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList();
+			List<DateType> dateList = cachedTypes.computeIfAbsent(formats,
+					v -> formats.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList());
 
 			StringBuilder sb = new StringBuilder();
 			boolean isLastDateType;
@@ -187,10 +191,7 @@ public class TimeBuilder {
 					time %= dateTypeTime;
 				}
 
-
 				// weather or not this is the last type in the list
-
-
 				if ((value > 0 || forceAllTypes)) {
 					if (isLastDateType) {
 						double decimalValue = (double) time / dateTypeTime;
@@ -199,14 +200,13 @@ public class TimeBuilder {
 								formatDecimal(decimalValue, maxDecimalsToShow, trimTrailingDecimalZeros), name));
 					} else {
 						String name = timePostfix(dateType, value, useFullNames, capitalizeFirstLetter);
-						sb.append("%d%s ".formatted(value, name));
+						sb.append(value).append(name).append("");
+						//sb.append("%d%s ".formatted(value, name));
 					}
 				}
 			}
 
-			return sb.toString().
-
-					trim();
+			return sb.toString().trim();
 		}
 
 		/**
@@ -396,8 +396,6 @@ public class TimeBuilder {
 			}
 			return timeMap;
 		}
-
-
 	}
 
 }

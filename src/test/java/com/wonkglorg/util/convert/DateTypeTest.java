@@ -13,7 +13,7 @@ class DateTypeTest {
 	@Test
 	void convertBackAndFourth() {
 		String expectedTime = "124E 335ML 7D 7Y 4M 2W 5d 14h 21m 43s 333ms";
-		long expectedMillies = 3921031000333303333L;
+		long expectedMillis = 3921031000333303333L;
 		long result = fromTimeString(expectedTime).toMilliseconds();
 		String revertedString = toTimeString().inputMillie(result).build();
 		System.out.println("Input time: " + expectedTime);
@@ -21,7 +21,7 @@ class DateTypeTest {
 		System.out.println("Millies result: " + result);
 		System.out.println("---------------------");
 		System.out.println("Reverse Conversion: " + revertedString);
-		assertEquals(expectedMillies, result);
+		assertEquals(expectedMillis, result);
 		assertEquals(expectedTime, revertedString);
 	}
 

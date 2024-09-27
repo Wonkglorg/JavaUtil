@@ -31,11 +31,16 @@ public enum DateType {
 	private final String postfix;
 	private final String fullName;
 	private final Duration duration;
+	//cached for better effiency
+	private final long milliseconds;
+	private final long seconds;
 
 	DateType(String postfix, String fullName, Duration duration) {
 		this.postfix = postfix;
 		this.fullName = fullName;
 		this.duration = duration;
+		this.milliseconds = duration.toMillis();
+		this.seconds = duration.toSeconds();
 	}
 
 	/**
@@ -49,7 +54,7 @@ public enum DateType {
 	 * @return the represented dateType in seconds
 	 */
 	public long getSeconds() {
-		return duration.getSeconds();
+		return seconds;
 	}
 
 	/**
@@ -57,7 +62,7 @@ public enum DateType {
 	 * @throws ArithmeticException if numeric overflow occurs
 	 */
 	public long getMilliseconds() {
-		return duration.toMillis();
+		return milliseconds;
 	}
 
 	//unused as it had too many easy exceptions it could throw,
