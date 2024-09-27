@@ -9,12 +9,14 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class StringUtils {
+	private static ThreadLocalRandom random = ThreadLocalRandom.current();
 	private StringUtils() {
 	}
 
@@ -99,26 +101,38 @@ public class StringUtils {
 	 * @param character The character to pad with
 	 * @return The padded string or just the padding if the specified object is null or empty
 	 */
-	public static String padCenter(final Object str, final int totalLength, final char character) {
-		if (str == null) {
-			return String.valueOf(character).repeat(Math.max(0, totalLength));
-		}
+public static String padCenter(final Object str, int totalLength, final char character) {
+			totalLength = Math.max(totalLength, 0);
+    if (str == null) {
+        StringBuilder sb = new StringBuilder(totalLength);
+        for (int i = 0; i < totalLength; i++) {
+            sb.append(character);
+        }
+        return sb.toString();
+    }
 
+    final String stringValue = String.valueOf(str);
+    final int padding = totalLength - stringValue.length();
+    if (padding <= 0) {
+        return stringValue; // No padding needed
+    }
 
-		final String stringValue = String.valueOf(str);
-		final int padding = totalLength - stringValue.length();
-		if (padding <= 0) {
-			return stringValue;
-		}
+    final int leftPadding = padding / 2;
+    final int rightPadding = padding - leftPadding;
 
-		final int leftPadding = padding / 2;
-		final int rightPadding = padding - leftPadding;
+    StringBuilder sb = new StringBuilder(totalLength);
+		//do not use repeat, makes it slower leave the for loop
+    for (int i = 0; i < leftPadding; i++) {
+        sb.append(character);
+    }
+    sb.append(stringValue);
 
-		String characterString = String.valueOf(character);
-		return characterString.repeat(leftPadding) + stringValue + characterString.repeat(
-				Math.max(0, rightPadding));
-	}
+    for (int i = 0; i < rightPadding; i++) {
+        sb.append(character);
+    }
 
+    return sb.toString();
+}
 	/**
 	 * Truncates a string to a specified length
 	 *
@@ -365,14 +379,21 @@ public class StringUtils {
 	 * @param characters The characters to use in the string
 	 * @return The random string
 	 */
-	public static String generateRandomString(int length, String characters) {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < length; i++) {
-			sb.append(characters.charAt((int) (Math.random() * characters.length())));
-		}
-		return sb.toString();
+  public static String generateRandomString(int length, String characters) {
+        length = Math.max(length, 0);
+        int charLength = characters.length();
+        char[] result = new char[length];
 
-	}
+        byte[] randomBytes = new byte[length + 32];
+        random.nextBytes(randomBytes);
+
+        for (int i = 0; i < length; i++) {
+            result[i] = characters.charAt((randomBytes[i] & 0xFF) % charLength);
+        }
+
+        return new String(result);
+    }
+
 
 	/**
 	 * Capitalizes the first letter of every word in a String
