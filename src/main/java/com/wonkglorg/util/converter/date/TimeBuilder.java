@@ -200,7 +200,7 @@ public class TimeBuilder {
 								formatDecimal(decimalValue, maxDecimalsToShow, trimTrailingDecimalZeros), name));
 					} else {
 						String name = timePostfix(dateType, value, useFullNames, capitalizeFirstLetter);
-						sb.append(value).append(name).append("");
+						sb.append(value).append(name).append(" ");
 						//sb.append("%d%s ".formatted(value, name));
 					}
 				}

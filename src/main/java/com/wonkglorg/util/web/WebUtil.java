@@ -108,8 +108,6 @@ public class WebUtil {
         return downloadFile(url, targetPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private static final String[] fileExtensions = {"pdf", "jpg", "png", "zip", "doc", "xls", "mp3", "mp4", "avi", "exe", "rar", "svg"};
-
 
     /**
      * Checks if the given URL points to a file. this check is not 100% accurate but a good estimate, estimates based on the url structure and does not send any requests.

@@ -158,4 +158,12 @@ public class FileUtils {
 
     }
 
+    public static String getExtension(String fileName) {
+        int index = fileName.lastIndexOf('.');
+        if (index == -1) {
+            return null;
+        }
+        return fileName.substring(index + 1);
+    }
+
 }
