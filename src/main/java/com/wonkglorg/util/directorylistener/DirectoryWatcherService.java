@@ -12,7 +12,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
 public class DirectoryWatcherService {
 
     private final Path directoryToWatch;
-    private final ExecutorService executorService;
+    private ExecutorService executorService;
     private final ScheduledExecutorService scheduler;
     private Consumer<Exception> exceptionHandler = e -> e.printStackTrace();
     /**
@@ -24,13 +24,12 @@ public class DirectoryWatcherService {
 
     public DirectoryWatcherService(Path directoryToWatch, long checkInterval) {
         this.directoryToWatch = directoryToWatch;
-        this.executorService = Executors.newSingleThreadExecutor();
         this.scheduler = Executors.newScheduledThreadPool(1);
         this.checkInterval = checkInterval;
     }
 
     public DirectoryWatcherService(Path directoryToWatch) {
-        this(directoryToWatch, 500L);
+        this(directoryToWatch, 1000L);
     }
 
     /**
@@ -38,9 +37,10 @@ public class DirectoryWatcherService {
      */
     @SuppressWarnings("unchecked")
     public void startWatching() {
-        if (!executorService.isTerminated()) {
-            return;
-        }
+
+        if (executorService != null) return;
+
+        this.executorService = Executors.newSingleThreadExecutor();
         monitorFilesUntilStable();
         executorService.submit(() -> {
             try {
@@ -64,6 +64,7 @@ public class DirectoryWatcherService {
                             if (fileStabilityMonitorMap.containsKey(fileName)) continue;
                             executeEventHandler(ENTRY_MODIFY, fileName);
                         } else if (kind == ENTRY_DELETE) {
+                            fileStabilityMonitorMap.remove(fileName);
                             executeEventHandler(ENTRY_DELETE, fileName);
                         }
                     }
@@ -89,10 +90,6 @@ public class DirectoryWatcherService {
                         executeEventHandler(ENTRY_CREATE, fileName);
                     } else {
                         currentStatus.setValues(newStatus.getFileSize(), newStatus.getLastModifiedTime());
-                    }
-
-                    if (!Files.exists(fileName)) {
-                        fileStabilityMonitorMap.remove(fileName);
                     }
                 }), 0, checkInterval, TimeUnit.MILLISECONDS);  // Run the check at a regular interval
     }
