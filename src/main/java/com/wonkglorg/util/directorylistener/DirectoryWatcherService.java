@@ -55,17 +55,17 @@ public class DirectoryWatcherService {
 
                         if (kind == null || kind == OVERFLOW) continue;
 
-                        Path fileName = directoryToWatch.resolve(((WatchEvent<Path>) event).context());
+                        Path filePath = directoryToWatch.resolve(((WatchEvent<Path>) event).context());
 
                         if (kind == ENTRY_CREATE) {
-                            fileStabilityMonitorMap.put(fileName, getFileStatus(fileName));
+                            fileStabilityMonitorMap.put(filePath, getFileStatus(filePath));
                         } else if (kind == ENTRY_MODIFY) {
                             //skips the event call cause its still being monitored for stability
-                            if (fileStabilityMonitorMap.containsKey(fileName)) continue;
-                            executeEventHandler(ENTRY_MODIFY, fileName);
+                            if (fileStabilityMonitorMap.containsKey(filePath)) continue;
+                            executeEventHandler(ENTRY_MODIFY, filePath);
                         } else if (kind == ENTRY_DELETE) {
-                            fileStabilityMonitorMap.remove(fileName);
-                            executeEventHandler(ENTRY_DELETE, fileName);
+                            fileStabilityMonitorMap.remove(filePath);
+                            executeEventHandler(ENTRY_DELETE, filePath);
                         }
                     }
 
@@ -94,15 +94,15 @@ public class DirectoryWatcherService {
                 }), 0, checkInterval, TimeUnit.MILLISECONDS);  // Run the check at a regular interval
     }
 
+    /**
+     * Stops watching the directory
+     * @throws InterruptedException if the executor service is interrupted
+     */
     public void stopWatching() throws InterruptedException {
         executorService.awaitTermination(3, TimeUnit.SECONDS);
         scheduler.awaitTermination(3, TimeUnit.SECONDS);
     }
 
-    public void cancel() {
-        executorService.shutdownNow();
-        scheduler.shutdownNow();
-    }
 
     /**
      * Get the file status for a file
