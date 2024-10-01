@@ -20,20 +20,28 @@ public class DirectoryWatcherService {
      */
     private final Map<Path, FileStatus> fileStabilityMonitorMap = new ConcurrentHashMap<>();
     private final Map<WatchEvent.Kind<Path>, Consumer<Path>> eventConsumerMap = new ConcurrentHashMap<>();
-    private final long checkInterval = 500L;
+    private long checkInterval = 500L;
 
-    public DirectoryWatcherService(Path directoryToWatch) {
+    public DirectoryWatcherService(Path directoryToWatch, long checkInterval) {
         this.directoryToWatch = directoryToWatch;
         this.executorService = Executors.newSingleThreadExecutor();
         this.scheduler = Executors.newScheduledThreadPool(1);
-        monitorFilesUntilStable();
+        this.checkInterval = checkInterval;
     }
 
-    private void onEvent(WatchEvent.Kind<Path> eventKind, Consumer<Path> eventHandler) {
-        eventConsumerMap.put(eventKind, eventHandler);
+    public DirectoryWatcherService(Path directoryToWatch) {
+        this(directoryToWatch, 500L);
     }
 
+    /**
+     * Starts watching the directory for file creation, modification and deletion events
+     */
+    @SuppressWarnings("unchecked")
     public void startWatching() {
+        if (!executorService.isTerminated()) {
+            return;
+        }
+        monitorFilesUntilStable();
         executorService.submit(() -> {
             try {
                 WatchService watchService = FileSystems.getDefault().newWatchService();
@@ -45,10 +53,9 @@ public class DirectoryWatcherService {
                     for (WatchEvent<?> event : key.pollEvents()) {
                         WatchEvent.Kind<?> kind = event.kind();
 
-                        if (kind == OVERFLOW) continue;
+                        if (kind == null || kind == OVERFLOW) continue;
 
-                        WatchEvent<Path> ev = (WatchEvent<Path>) event;
-                        Path fileName = directoryToWatch.resolve(ev.context());
+                        Path fileName = directoryToWatch.resolve(((WatchEvent<Path>) event).context());
 
                         if (kind == ENTRY_CREATE) {
                             fileStabilityMonitorMap.put(fileName, getFileStatus(fileName));
@@ -61,15 +68,43 @@ public class DirectoryWatcherService {
                         }
                     }
 
-                    boolean valid = key.reset();
-                    if (!valid) {
-                        break;
-                    }
+                    key.reset();
                 }
             } catch (Exception e) {
                 exceptionHandler.accept(e);
             }
         });
+    }
+
+
+    /**
+     * Monitors files until they are stable (no longer changing in size and last modified time) and then calls the file created event
+     */
+    private void monitorFilesUntilStable() {
+        scheduler.scheduleAtFixedRate(() ->//
+                fileStabilityMonitorMap.forEach((fileName, currentStatus) -> {
+                    FileStatus newStatus = getFileStatus(fileName);
+                    if (currentStatus.equals(newStatus)) {
+                        fileStabilityMonitorMap.remove(fileName);
+                        executeEventHandler(ENTRY_CREATE, fileName);
+                    } else {
+                        currentStatus.setValues(newStatus.getFileSize(), newStatus.getLastModifiedTime());
+                    }
+
+                    if (!Files.exists(fileName)) {
+                        fileStabilityMonitorMap.remove(fileName);
+                    }
+                }), 0, checkInterval, TimeUnit.MILLISECONDS);  // Run the check at a regular interval
+    }
+
+    public void stopWatching() throws InterruptedException {
+        executorService.awaitTermination(3, TimeUnit.SECONDS);
+        scheduler.awaitTermination(3, TimeUnit.SECONDS);
+    }
+
+    public void cancel() {
+        executorService.shutdownNow();
+        scheduler.shutdownNow();
     }
 
     /**
@@ -135,28 +170,8 @@ public class DirectoryWatcherService {
         }
     }
 
-    /**
-     * Monitors files until they are stable (no longer changing in size and last modified time) and then calls the file created event
-     */
-    private void monitorFilesUntilStable() {
-        scheduler.scheduleAtFixedRate(() ->//
-                fileStabilityMonitorMap.forEach((fileName, currentStatus) -> {
-                    FileStatus newStatus = getFileStatus(fileName);
-                    if (currentStatus.equals(newStatus)) {
-                        fileStabilityMonitorMap.remove(fileName);
-                        executeEventHandler(ENTRY_CREATE, fileName);
-                    } else {
-                        currentStatus.setValues(newStatus.getFileSize(), newStatus.getLastModifiedTime());
-                    }
-
-                    if (!Files.exists(fileName)) {
-                        fileStabilityMonitorMap.remove(fileName);
-                    }
-                }), 0, checkInterval, TimeUnit.MILLISECONDS);  // Run the check at a regular interval
+    private void onEvent(WatchEvent.Kind<Path> eventKind, Consumer<Path> eventHandler) {
+        eventConsumerMap.put(eventKind, eventHandler);
     }
 
-    public void stopWatching() {
-        executorService.shutdownNow();
-        scheduler.shutdownNow();
-    }
 }
