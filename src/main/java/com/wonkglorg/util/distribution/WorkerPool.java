@@ -1,6 +1,5 @@
 package com.wonkglorg.util.distribution;
 
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,12 +11,14 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
- * A Worker pool represents a set of workers all doing the same type of work.
+ * A Worker pool represents a set of workers all doing the same type of tasks on a given set of jobs
+ * provided by the {@link WorkDistributor}
  */
 public class WorkerPool<T> {
+	/** Used for naming pools */
 	private static AtomicInteger poolIndex = new AtomicInteger(1);
+	/** The name of this pool */
 	private final String poolName;
-	private int workerIndex = 0;
 	private final BlockingQueue<WeightedJob<T>> taskQueue;
 	private final Consumer<T> workerJob;
 	private final List<Worker<T>> workers;
@@ -53,7 +54,7 @@ public class WorkerPool<T> {
 	 * @param workerJob the job they should execute
 	 * @param validateWorkerForJob weather or not this pool qualifies for a job
 	 */
-	public WorkerPool(int workerCount, int priority, int capacity, Consumer<T> workerJob,
+	public WorkerPool(int workerCount, int capacity, int priority, Consumer<T> workerJob,
 			Predicate<T> validateWorkerForJob) {
 		this("WorkerPool%s".formatted(poolIndex.getAndIncrement()), workerCount, priority, capacity,
 				workerJob, validateWorkerForJob);
@@ -64,8 +65,7 @@ public class WorkerPool<T> {
 	 */
 	public void startWorkers() {
 		for (int i = 0; i < workerCount; i++) {
-			Worker<T> workerThread =
-					new Worker<>("Worker%s".formatted(workerIndex++), taskQueue, workerJob);
+			Worker<T> workerThread = new Worker<>(taskQueue, workerJob);
 			workerThread.start();
 			workers.add(workerThread);
 		}

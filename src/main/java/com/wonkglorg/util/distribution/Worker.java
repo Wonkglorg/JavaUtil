@@ -5,9 +5,11 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class Worker<T> extends Thread {
+	private static final AtomicInteger workerIndex = new AtomicInteger(1);
 	private static int MAX_MAP_SIZE = 100;
 	/** Keeps track of job runtime durations */
 	private final Map<WeightedJob<T>, Long> jobDurations;
@@ -19,6 +21,11 @@ public class Worker<T> extends Thread {
 	private boolean isAvailable = false;
 	private final String workerName;
 
+	/**
+	 * @param workerName the name of the worker
+	 * @param taskQueue the task queue it should retrieve its jobs from
+	 * @param workerJob the work to execute on a job
+	 */
 	public Worker(String workerName, BlockingQueue<WeightedJob<T>> taskQueue,
 			Consumer<T> workerJob) {
 		this.workerName = workerName;
@@ -26,6 +33,15 @@ public class Worker<T> extends Thread {
 		this.workerJob = workerJob;
 		jobDurations = new ConcurrentHashMap<>(MAX_MAP_SIZE);
 	}
+	/**
+´´
+	 * @param taskQueue the task queue it should retrieve its jobs from
+	 * @param workerJob the work to execute on a job
+	 */
+	public Worker(BlockingQueue<WeightedJob<T>> taskQueue, Consumer<T> workerJob) {
+		this("Worker%s".formatted(workerIndex.getAndIncrement()), taskQueue, workerJob);
+	}
+
 
 	/**
 	 * If this worker is available to take a new job

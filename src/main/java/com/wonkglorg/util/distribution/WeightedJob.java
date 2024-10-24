@@ -54,9 +54,10 @@ public class WeightedJob<T> implements Comparable<WeightedJob<T>> {
 		if (this == object) {
 			return true;
 		}
-		if (!(object instanceof WeightedJob<?> that)) {
+		if (!(object instanceof WeightedJob<?>)) {
 			return false;
 		}
+		WeightedJob<?> that = (WeightedJob<?>) object;
 		return weight == that.weight && creationTime == that.creationTime && Objects.equals(taskName,
 				that.taskName) && Objects.equals(job, that.job);
 	}
