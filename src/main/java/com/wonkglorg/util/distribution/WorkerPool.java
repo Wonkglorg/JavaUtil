@@ -152,13 +152,8 @@ public class WorkerPool<T> {
 	 * new jobs and should not be used
 	 */
 	public int getSuitability(T task) {
-		if (!isAvailable()) {
+		if (!isAvailable() || !canHandle(task)) {
 			return -99;
-		}
-
-		int canHandleTask = 1;
-		if (task != null) {
-			canHandleTask = canHandle(task) ? 1 : 0;
 		}
 
 		double capacityFactor = (double) getAvailableCapacity() / getCapacity();
@@ -167,7 +162,7 @@ public class WorkerPool<T> {
 			availableWorkers += worker.isAvailable() ? 1 : 0;
 		}
 		double priorityFactor = 1.0 * getPriority();
-		double suitabilityScore = (capacityFactor + priorityFactor + availableWorkers) * canHandleTask;
+		double suitabilityScore = capacityFactor + priorityFactor + availableWorkers;
 
 		return (int) (suitabilityScore * 100);
 	}
