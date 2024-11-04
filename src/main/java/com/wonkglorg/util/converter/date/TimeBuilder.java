@@ -5,11 +5,11 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ToLongFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,7 +29,8 @@ public class TimeBuilder {
 	protected final Set<DateType> allTypes =
 			Arrays.stream(DateType.values()).collect(Collectors.toSet());
 
-	protected static final Map<Set<DateType>, List<DateType>> cachedTypes = new HashMap<>();
+	protected static final Map<Set<DateType>, List<DateType>> cachedTypes =
+			new ConcurrentHashMap<>();
 
 	/**
 	 * @return creates a time-string builder to convert time in number format to a human-readable
