@@ -7,11 +7,9 @@ public enum ConsoleTextStyle {
     ITALIC("\033[3m"),
     UNDERLINE("\033[4m"),
     BLINK("\033[5m"),
-
     INVERSE("\033[7m"),
     HIDDEN("\033[8m"),
     STRIKETHROUGH("\033[9m"),
-
     ;
 
     private final String code;

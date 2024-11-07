@@ -15,7 +15,7 @@ public abstract class Scanner<T extends Scanner<T>> {
     protected int maxFileCount;
     protected boolean scanAll = false;
 
-    public Scanner() {
+    protected Scanner() {
         this.depthLimit = 20;
         this.rootPath = "";
         fileFilter = new ArrayList<>();

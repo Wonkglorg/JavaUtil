@@ -1,153 +1,118 @@
 package com.wonkglorg.util.programms;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.File;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Function;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Helper class to build a command line program with parameters and execute them
  */
 public class ProgrammBuilder {
-    private final String programName;
+	private final String programName;
 
-    /**
-     * Constructs a new ProgrammBuilder
-     *
-     * @param processValue The value to use for the program name
-     * @param programName  The name of the program
-     */
-    public ProgrammBuilder(ProcessValue processValue, String programName) {
-        if (Objects.requireNonNull(processValue) == ProcessValue.ENVIROMENT) {
-            this.programName = System.getenv(programName);
-        } else {
-            this.programName = programName;
-        }
-    }
+	/**
+	 * Constructs a new ProgrammBuilder
+	 *
+	 * @param processValue The value to use for the program name
+	 * @param programName The name of the program
+	 */
+	public ProgrammBuilder(ProgrammLocation processValue, String programName) {
+		if (Objects.requireNonNull(processValue) == ProgrammLocation.ENVIRONMENT) {
+			this.programName = System.getenv(programName);
+		} else {
+			this.programName = programName;
+		}
+	}
 
-    /**
-     * Returns an array of strings that can be used as arguments for a ProcessBuilder
-     *
-     * @return prepends the program name to the arguments
-     */
-    public String[] buildArgumentArray(String[] programmString) {
-        List<String> list = new ArrayList<>();
-        list.add(programName);
-        list.addAll(Arrays.asList(programmString));
-        return list.toArray(new String[0]);
-    }
+	/**
+	 * Append executable name to command
+	 *
+	 * @param command Command string
+	 * @return Command string
+	 */
+	private String buildCommand(String command) {
+		return String.format("%s %s", programName, command);
+	}
 
+	/**
+	 * Executes the given request for this process
+	 */
+	public ProgrammResponse execute(ProgrammRequest request) throws Exception {
+		String command = buildCommand(request.buildOptions());
+		String directory = request.getDirectory();
+		Map<String, String> options = request.getOptions();
 
-    /**
-     * Executes the command
-     * <p>
-     * Returns a map with the process and the threads that are running the output streams (if non are specified the thread will wait for the process to finish, (otherwise {@link Process#waitFor()} should be called to ensure the process fully finished,
-     */
-    public Map.Entry<Process, Map<OutputType, Thread>> execute(String[] arguments, Set<OutputType> outputTypes) throws IOException {
-        System.out.println("Executing: " + this);
-        ProcessBuilder processBuilder = new ProcessBuilder(buildArgumentArray(arguments));
-        Process process = processBuilder.start();
+		Process process;
+		int exitCode;
+		StringBuilder outBuffer = new StringBuilder(); // stdout
+		StringBuilder errBuffer = new StringBuilder(); // stderr
+		long startTime = System.nanoTime();
 
-        HashMap<OutputType, Thread> threadMap = new HashMap<>();
+		//if multiple empty lines happen correctly split em up
+		String[] split =
+				Arrays.stream(command.split(" ")).filter(s -> !s.isEmpty()).toArray(String[]::new);
 
+		ProcessBuilder processBuilder = new ProcessBuilder(split);
 
-        if (outputTypes == null || outputTypes.isEmpty()) {
-            try {
-                process.waitFor();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
+		// Define directory if one is passed
+		if (directory != null) {
+			processBuilder.directory(new File(directory));
+		}
 
+		process = processBuilder.start();
 
-        for (var outputType : outputTypes) {
-            threadMap.put(outputType, startThread(outputType.getInputStream(process), outputType.getAction()));
-        }
+		InputStream outStream = process.getInputStream();
+		InputStream errStream = process.getErrorStream();
 
-        return Map.entry(process, threadMap);
-    }
+		var stdOutProcessor = new StreamProcessExtractor(outBuffer, outStream, request.getCallback());
+		var stdErrProcessor =
+				new StreamProcessExtractor(errBuffer, errStream, request.getErrorCallback());
 
-    /**
-     * Executes the command without a console output as a return
-     *
-     * @param outputTypes
-     * @throws IOException
-     */
-    public void executeWithoutConsole(String[] arguments, Set<OutputType> outputTypes) throws IOException, InterruptedException {
-        System.out.println("Executing: " + this);
-        System.out.println("-----------------------------------------");
-        var result = execute(arguments, outputTypes);
-        result.getKey().waitFor();
-        System.out.println("-----------------------------------------");
-    }
+		try {
+			stdOutProcessor.join();
+			stdErrProcessor.join();
+			exitCode = process.waitFor();
+		} catch (InterruptedException e) {
+			// process exited for some reason
+			throw new Exception(e);
+		}
 
-    /**
-     * Starts a thread that reads the from a stream and runs an action for each line
-     *
-     * @param stream
-     * @param action
-     * @return
-     */
-    private Thread startThread(InputStream stream, Consumer<String> action) {
-        Thread thread = new Thread(() -> {
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    action.accept(line);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        });
-        thread.start();
-        return thread;
-    }
+		String out = outBuffer.toString();
+		String err = errBuffer.toString();
 
-    public enum OutputType {
-        INFO(Process::getInputStream, System.out::println), ERROR(Process::getErrorStream, System.err::println);
+		if (exitCode > 0) {
+			throw new Exception(err);
+		}
 
-        private final Function<Process, InputStream> streamSupplier;
-        private final Consumer<String> action;
+		int elapsedTime = (int) ((System.nanoTime() - startTime) / 1000000);
 
-        OutputType(Function<Process, InputStream> streamSupplier, Consumer<String> action) {
-            this.streamSupplier = streamSupplier;
-            this.action = action;
-        }
-
-        public Consumer<String> getAction() {
-            return action;
-        }
-
-        public InputStream getInputStream(Process process) {
-            return streamSupplier.apply(process);
-        }
-    }
-
-    public enum ProcessValue {
-        /**
-         * The program name is taken from the environment variables
-         */
-        ENVIROMENT,
-
-        /**
-         * The program name is taken as a literal
-         */
-        PATH;
-
-    }
+		return new ProgrammResponse(String.join(" ", command), options, directory, exitCode,
+				elapsedTime, out, err);
+	}
 
 
-    /**
-     * Returns a user-friendly string representation
-     *
-     * @return
-     */
-    @Override
-    public String toString() {
-        return programName;
-    }
+	public enum ProgrammLocation {
+		/**
+		 * The program name is taken from the environment variables
+		 */
+		ENVIRONMENT,
+
+		/**
+		 * The program name is taken as a literal
+		 */
+		PATH;
+	}
+
+
+	/**
+	 * Returns a user-friendly string representation
+	 *
+	 * @return
+	 */
+	@Override
+	public String toString() {
+		return programName;
+	}
 }

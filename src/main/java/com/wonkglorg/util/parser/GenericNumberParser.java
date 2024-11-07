@@ -25,16 +25,16 @@ public class GenericNumberParser {
 			if (number instanceof Long || number.doubleValue() == Math.floor(number.doubleValue())) {
 				long longValue = number.longValue();
 				if (longValue >= Integer.MIN_VALUE && longValue <= Integer.MAX_VALUE) {
-					return Integer.valueOf((int) longValue);
+					return (int) longValue;
 				} else {
-					return Long.valueOf(longValue);
+					return longValue;
 				}
 			} else {
 				double doubleValue = number.doubleValue();
 				if (doubleValue >= Float.MIN_VALUE && doubleValue <= Float.MAX_VALUE) {
-					return Float.valueOf((float) doubleValue);
+					return (float) doubleValue;
 				} else {
-					return Double.valueOf(doubleValue);
+					return doubleValue;
 				}
 			}
 		} catch (ParseException e) {
