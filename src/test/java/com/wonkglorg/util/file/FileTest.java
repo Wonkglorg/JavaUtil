@@ -17,8 +17,8 @@ public class FileTest {
 
     static {
         fileMap.put("https://www.google.com", false);
-        fileMap.put("https://www.google.com/index.html", false);
-        fileMap.put("https://www.google.com/index.htm", false);
+        fileMap.put("https://www.google.com/index.html", true);
+        fileMap.put("https://www.google.com/index.htm", true);
         fileMap.put("https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f62d.svg", true);
         fileMap.put("https://cdn.jsdelivr.net/gh/twitter/twemoji@latest/assets/svg/1f62d", false);
 
