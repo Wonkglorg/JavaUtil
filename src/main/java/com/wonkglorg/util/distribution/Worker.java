@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class Worker<T> extends Thread {
@@ -16,7 +17,7 @@ public class Worker<T> extends Thread {
 	/** Queue of all jobs to be executed (shared per {@link WorkerPool} this worker is part of) */
 	private final BlockingQueue<WeightedJob<T>> jobQueue;
 	/** The Job a worker executes on the {@link #jobQueue} */
-	private final Consumer<T> workerJob;
+	private final BiConsumer<Worker<T>, T> workerJob;
 	/** If this worker is available to process an element */
 	private boolean isAvailable = false;
 	private final String workerName;
@@ -27,18 +28,20 @@ public class Worker<T> extends Thread {
 	 * @param workerJob the work to execute on a job
 	 */
 	public Worker(String workerName, BlockingQueue<WeightedJob<T>> taskQueue,
-			Consumer<T> workerJob) {
+			BiConsumer<Worker<T>, T> workerJob) {
 		this.workerName = workerName;
 		this.jobQueue = taskQueue;
 		this.workerJob = workerJob;
 		jobDurations = new ConcurrentHashMap<>(MAX_MAP_SIZE);
 	}
+
 	/**
-´´
+	 * ´´
+	 *
 	 * @param taskQueue the task queue it should retrieve its jobs from
 	 * @param workerJob the work to execute on a job
 	 */
-	public Worker(BlockingQueue<WeightedJob<T>> taskQueue, Consumer<T> workerJob) {
+	public Worker(BlockingQueue<WeightedJob<T>> taskQueue, BiConsumer<Worker<T>, T> workerJob) {
 		this("Worker%s".formatted(workerIndex.getAndIncrement()), taskQueue, workerJob);
 	}
 
@@ -58,7 +61,7 @@ public class Worker<T> extends Thread {
 				WeightedJob<T> job = jobQueue.take();
 				isAvailable = false;
 				long startTime = System.currentTimeMillis();
-				workerJob.accept(job.getJob());
+				workerJob.accept(this,job.getJob());
 				if (MAX_MAP_SIZE != 0) {
 					jobDurations.put(job, System.currentTimeMillis() - startTime);
 				}

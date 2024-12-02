@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 /**
@@ -20,7 +20,7 @@ public class WorkerPool<T> {
 	/** The name of this pool */
 	private final String poolName;
 	private final BlockingQueue<WeightedJob<T>> taskQueue;
-	private final Consumer<T> workerJob;
+	private final BiConsumer<Worker<T>, T> workerJob;
 	private final List<Worker<T>> workers;
 	private final int workerCount;
 	private final Predicate<T> validateWorkerForJob;
@@ -36,7 +36,7 @@ public class WorkerPool<T> {
 	 * @param validateWorkerForJob weather or not this pool qualifies for a job
 	 */
 	public WorkerPool(String poolName, int workerCount, int priority, int capacity,
-			Consumer<T> workerJob, Predicate<T> validateWorkerForJob) {
+			BiConsumer<Worker<T>, T> workerJob, Predicate<T> validateWorkerForJob) {
 		this.poolName = poolName;
 		this.workerCount = workerCount;
 		this.priority = priority;
@@ -54,7 +54,8 @@ public class WorkerPool<T> {
 	 * @param workerJob the job they should execute
 	 * @param validateWorkerForJob weather or not this pool qualifies for a job
 	 */
-	public WorkerPool(int workerCount, int capacity, int priority, Consumer<T> workerJob,
+	public WorkerPool(int workerCount, int capacity, int priority,
+			BiConsumer<Worker<T>, T> workerJob,
 			Predicate<T> validateWorkerForJob) {
 		this("WorkerPool%s".formatted(poolIndex.getAndIncrement()), workerCount, priority, capacity,
 				workerJob, validateWorkerForJob);
