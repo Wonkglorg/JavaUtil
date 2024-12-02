@@ -79,6 +79,14 @@ public class WorkerPool<T> {
 		}
 	}
 
+		/**
+	 * Sets the callback to use for workers of this pool
+	 * @param workerCallBack the callback (the job that ran, the time it took from start to end in ms)
+	 */
+	public void setJobCallBackForWorkers(BiConsumer<WeightedJob<T>, Long> workerCallBack) {
+		workers.forEach(worker -> worker.setJobFinishCallBack(workerCallBack));
+	}
+
 	public boolean isAvailable() {
 		return taskQueue.remainingCapacity() > 0;
 	}
