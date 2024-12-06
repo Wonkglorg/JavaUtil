@@ -32,6 +32,7 @@ public class Worker<T> extends Thread {
 	 */
 	public Worker(String workerName, BlockingQueue<WeightedJob<T>> taskQueue,
 			BiConsumer<Worker<T>, T> workerJob) {
+		this.setName(workerName);
 		this.workerName = workerName;
 		this.jobQueue = taskQueue;
 		this.workerJob = workerJob;
