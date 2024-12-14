@@ -72,7 +72,7 @@ public class Cooldown {
 
 
 	/**
-	 * @return true if the time duration + the start point is smaller than the current time
+	 * @return true if the cooldown has expired
 	 */
 	public boolean isExpired() {
 		return System.currentTimeMillis() - startTimeMillis >= duration.toMillis();
@@ -92,6 +92,18 @@ public class Cooldown {
 	 */
 	public Duration getDuration() {
 		return duration;
+	}
+
+	/**
+	 * @return the percentage of the cooldown that has elapsed, as a value between 0 and 100.
+	 */
+	public double getElapsedPercentage() {
+		long elapsedMillis = System.currentTimeMillis() - startTimeMillis;
+		long totalMillis = duration.toMillis();
+		if (totalMillis <= 0) {
+			return 100.0;
+		}
+		return Math.min(100.0, Math.max(0.0, (elapsedMillis / (double) totalMillis) * 100));
 	}
 
 	@Override
