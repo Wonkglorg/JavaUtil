@@ -87,12 +87,25 @@ public class Cooldown {
         return duration.toMillis() - (System.currentTimeMillis() - startTimeMillis);
     }
 
+    /**
+     * @return the elapsed time in milliseconds since the cooldown started
+     */
+    public long getElapsedTimeMs() {
+        return System.currentTimeMillis() - startTimeMillis;
+    }
 
     /**
      * Gets the remaining time as a {@link Duration} object from the current timestamp to its expiration
      */
     public Duration getRemainingTime() {
         return Duration.ofMillis(getRemainingMs());
+    }
+
+    /**
+     * @return the elapsed time since the cooldown started
+     */
+    public Duration getElapsedTime() {
+        return Duration.ofMillis(getElapsedTimeMs());
     }
 
     /**
@@ -112,6 +125,13 @@ public class Cooldown {
             return 100.0;
         }
         return Math.min(100.0, Math.max(0.0, (elapsedMillis / (double) totalMillis) * 100));
+    }
+
+    /**
+     * @return the percentage of the cooldown that is remaining, as a value between 0 and 100.
+     */
+    public double getRemainingPercentage() {
+        return 100 - getElapsedPercentage();
     }
 
     @Override
