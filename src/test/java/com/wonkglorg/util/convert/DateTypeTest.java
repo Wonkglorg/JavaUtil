@@ -1,5 +1,6 @@
 package com.wonkglorg.util.convert;
 
+import com.wonkglorg.util.converter.date.Cooldown;
 import com.wonkglorg.util.converter.date.DateType;
 import org.junit.jupiter.api.Test;
 
