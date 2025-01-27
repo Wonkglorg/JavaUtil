@@ -128,13 +128,13 @@ public class OrderedMap<K, V> extends HashMap<K, V>{
 	@Override
 	public Set<K> keySet() {
 		ensureSortedOrder();
-		return sortedOrder.stream().map(Entry::getKey).collect(Collectors.toSet());
+		return sortedOrder.stream().map(Entry::getKey).collect(Collectors.toCollection(HashSet::new));
 	}
 	
 	@Override
 	public Collection<V> values() {
 		ensureSortedOrder();
-		return sortedOrder.stream().map(Entry::getValue).toList();
+		return sortedOrder.stream().map(Entry::getValue).collect(Collectors.toCollection(ArrayList::new));
 	}
 	
 	/**
