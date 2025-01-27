@@ -17,12 +17,15 @@ class OrderedMapTest{
 		map.put("I", 9);
 		map.put("K", 11);
 		map.put("B", 2);
+		map.compute("G", (key, value) -> value + 1);
+		map.merge("G",-1,Integer::sum);
+		map.putIfAbsent("L", 12);
 
 		assertEquals("B=2", map.get(1).toString());
-		assertEquals("[A=1, B=2, C=3, D=4, G=7, I=9, K=11]", map.toString());
-		assertEquals("[A=1, B=2, C=3, D=4, G=7, I=9, K=11]", map.entrySet().toString());
-		assertEquals("[A, B, C, D, G, I, K]",map.keySet().toString());
-		assertEquals("[1, 2, 3, 4, 7, 9, 11]",map.values().toString());
+		assertEquals("[A=1, B=2, C=3, D=4, G=7, I=9, K=11, L=12]", map.toString());
+		assertEquals("[A=1, B=2, C=3, D=4, G=7, I=9, K=11, L=12]", map.entrySet().toString());
+		assertEquals("[A, B, C, D, G, I, K, L]",map.keySet().toString());
+		assertEquals("[1, 2, 3, 4, 7, 9, 11, 12]",map.values().toString());
 	}
 	
 	@Test
