@@ -17,6 +17,12 @@ class OrderedMapTest{
 
 		assertEquals("B=2", map.get(1).toString());
 		assertEquals("[A=1, B=2, C=3, D=4]", map.toString());
+		assertEquals("[A, B, C, D]",map.keySet().toString());
+		assertEquals("[1, 2, 3, 4]",map.values().toString());
+		int expectedValue = 1;
+		for (Map.Entry<String, Integer> entry : map.entrySet()) {
+			assertEquals(expectedValue++, entry.getValue());
+		}
 	}
 	
 	@Test

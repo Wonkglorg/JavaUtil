@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -121,11 +122,12 @@ public class OrderedMap<K, V> extends HashMap<K, V>{
 	@Override
 	public Set<Entry<K, V>> entrySet() {
 		ensureSortedOrder();
-		return Set.copyOf(sortedOrder);
+		return new HashSet<>(sortedOrder);
 	}
 	
 	@Override
 	public Set<K> keySet() {
+		ensureSortedOrder();
 		return sortedOrder.stream().map(Entry::getKey).collect(Collectors.toSet());
 	}
 	
