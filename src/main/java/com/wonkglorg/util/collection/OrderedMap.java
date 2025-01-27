@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,6 +71,7 @@ public class OrderedMap<K, V> extends HashMap<K, V> {
 	public OrderedMap(Map<? extends K, ? extends V> m, Comparator<Entry<K, V>> comparator) {
 		super(m);
 		this.comparator = comparator;
+		markDirty();
 		sortedOrder = new ArrayList<>(this.entrySet());
 	}
 
@@ -170,13 +172,13 @@ public class OrderedMap<K, V> extends HashMap<K, V> {
 	@Override
 	public Set<Entry<K, V>> entrySet() {
 		ensureSortedOrder();
-		return new HashSet<>(sortedOrder);
+		return new LinkedHashSet<>(sortedOrder);
 	}
 
 	@Override
 	public Set<K> keySet() {
 		ensureSortedOrder();
-		return sortedOrder.stream().map(Entry::getKey).collect(Collectors.toCollection(HashSet::new));
+		return sortedOrder.stream().map(Entry::getKey).collect(Collectors.toCollection(LinkedHashSet::new));
 	}
 
 	@Override
@@ -294,6 +296,7 @@ public class OrderedMap<K, V> extends HashMap<K, V> {
 
 	@Override
 	public String toString() {
+		ensureSortedOrder();
 		return "%s".formatted(sortedOrder);
 	}
 }
