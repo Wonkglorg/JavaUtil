@@ -14,13 +14,14 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("unused")
 public class IPv4 extends IP<IPv4> {
-
+	private static final int SEGMENT_COUNT = 4;
+	private static final int MAX_CIDR = 32;
 	public static final IPv4 Min = new IPv4(new int[]{0, 0, 0, 1});
 	public static final IPv4 Max = new IPv4(new int[]{255, 255, 255, 255});
-	private int[] ip = new int[4];
+	private final int[] ip;
 
 	private IPv4(int[] ipParts) {
-		this.ip = ipParts;
+		this.ip = Arrays.copyOf(ipParts, SEGMENT_COUNT);
 	}
 
 	/**
@@ -233,9 +234,9 @@ public class IPv4 extends IP<IPv4> {
 
 
 	public static Optional<IllegalArgumentException> validateCIDR(int cidr) {
-		if (cidr < 0 || cidr > 32) {
-			return Optional.of(
-					new IllegalArgumentException("CIDR value must be between 0 and 32 but was " + cidr));
+		if (cidr < 0 || cidr > MAX_CIDR) {
+			return Optional.of(new IllegalArgumentException(
+					"CIDR value must be between 0 and %d but was %d".formatted(MAX_CIDR, cidr)));
 		}
 		return Optional.empty();
 	}
@@ -253,7 +254,6 @@ public class IPv4 extends IP<IPv4> {
 	public int[] getSegments() {
 		return Arrays.copyOf(ip, ip.length);
 	}
-
 
 	/**
 	 * Returns the ip as a string formatted as "xxx.xxx.xxx.xxx"
