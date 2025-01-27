@@ -13,16 +13,16 @@ class OrderedMapTest{
 		map.put("C", 3);
 		map.put("D", 4);
 		map.put("A", 1);
+		map.put("G", 7);
+		map.put("I", 9);
+		map.put("K", 11);
 		map.put("B", 2);
 
 		assertEquals("B=2", map.get(1).toString());
-		assertEquals("[A=1, B=2, C=3, D=4]", map.toString());
-		assertEquals("[A, B, C, D]",map.keySet().toString());
-		assertEquals("[1, 2, 3, 4]",map.values().toString());
-		int expectedValue = 1;
-		for (Map.Entry<String, Integer> entry : map.entrySet()) {
-			assertEquals(expectedValue++, entry.getValue());
-		}
+		assertEquals("[A=1, B=2, C=3, D=4, G=7, I=9, K=11]", map.toString());
+		assertEquals("[A=1, B=2, C=3, D=4, G=7, I=9, K=11]", map.entrySet().toString());
+		assertEquals("[A, B, C, D, G, I, K]",map.keySet().toString());
+		assertEquals("[1, 2, 3, 4, 7, 9, 11]",map.values().toString());
 	}
 	
 	@Test
