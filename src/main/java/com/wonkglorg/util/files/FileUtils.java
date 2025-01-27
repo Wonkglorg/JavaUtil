@@ -6,11 +6,15 @@ import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 public class FileUtils {
 
@@ -160,10 +164,12 @@ public class FileUtils {
 
 	/**
 	 * Gets the extension of a file
-	 * @param fileName the file to get the extension from
+	 *
+	 * @param file the file to get the extension from
 	 * @return null or a valid extension
 	 */
-	public static String getExtension(String fileName) {
+	public static String getExtension(File file) {
+		String fileName = file.getName();
 		int index = fileName.lastIndexOf('.');
 		if (index == -1) {
 			return null;
@@ -181,7 +187,62 @@ public class FileUtils {
 	public static File changeExtension(File f, String newExtension) {
 		int i = f.getName().lastIndexOf('.');
 		String name = f.getName().substring(0, i == -1 ? f.getName().length() - 1 : i);
-		return new File(f.getParent(), name + newExtension);
+		return new File(f.getParent(), name + "." + newExtension);
+	}
+
+	/**
+	 * Zips a File
+	 *
+	 * @param zipFile the outputZipFile
+	 * @param filesToZip the content to zip (can be files or directories)
+	 * @return the zipped file
+	 */
+	public static File zipFile(File zipFile, File... filesToZip) {
+		try (FileOutputStream fos = new FileOutputStream(zipFile);
+				ZipOutputStream zipOut = new ZipOutputStream(fos)) {
+
+			for (File fileToZip : filesToZip) {
+				addFileToZip(fileToZip, fileToZip.getName(), zipOut);
+			}
+
+		} catch (IOException e) {
+			throw new RuntimeException("Error zipping files.", e);
+		}
+		return zipFile;
+	}
+
+	private static void addFileToZip(File fileToZip, String fileName, ZipOutputStream zipOut)
+			throws IOException {
+		if (fileToZip.isHidden()) {
+			return; // Skip hidden files
+		}
+
+		if (fileToZip.isDirectory()) {
+			if (fileName.endsWith("/")) {
+				zipOut.putNextEntry(new ZipEntry(fileName));
+				zipOut.closeEntry();
+			} else {
+				zipOut.putNextEntry(new ZipEntry(fileName + "/"));
+				zipOut.closeEntry();
+			}
+			File[] children = fileToZip.listFiles();
+			if (children != null) {
+				for (File childFile : children) {
+					addFileToZip(childFile, fileName + "/" + childFile.getName(), zipOut);
+				}
+			}
+		} else {
+			try (FileInputStream fis = new FileInputStream(fileToZip)) {
+				ZipEntry zipEntry = new ZipEntry(fileName);
+				zipOut.putNextEntry(zipEntry);
+
+				byte[] bytes = new byte[1024];
+				int length;
+				while ((length = fis.read(bytes)) >= 0) {
+					zipOut.write(bytes, 0, length);
+				}
+			}
+		}
 	}
 
 }

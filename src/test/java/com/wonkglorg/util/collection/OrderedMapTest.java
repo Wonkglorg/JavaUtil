@@ -11,11 +11,12 @@ class OrderedMapTest{
 		OrderedMap<String, Integer> map = new OrderedMap<>(Map.Entry.<String, Integer>comparingByValue());
 		
 		map.put("C", 3);
+		map.put("D", 4);
 		map.put("A", 1);
 		map.put("B", 2);
-		
+
 		assertEquals("B=2", map.get(1).toString());
-		assertEquals("[A=1, B=2, C=3]", map.toString());
+		assertEquals("[A=1, B=2, C=3, D=4]", map.toString());
 	}
 	
 	@Test

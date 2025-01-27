@@ -51,32 +51,11 @@ public class OrderedMap<K, V> extends HashMap<K, V>{
 	 * Creates a new OrderedMap
 	 *
 	 * @param initialCapacity The initial capacity of the map
-	 * @param loadFactor The load factor of the map
-	 */
-	public OrderedMap(int initialCapacity, float loadFactor) {
-		super(initialCapacity, loadFactor);
-		sortedOrder = new ArrayList<>(initialCapacity);
-	}
-	
-	/**
-	 * Creates a new OrderedMap
-	 *
-	 * @param initialCapacity The initial capacity of the map
 	 * @param comparator The comparator to sort the map by
 	 */
 	public OrderedMap(int initialCapacity, Comparator<Entry<K, V>> comparator) {
 		super(initialCapacity);
 		this.comparator = comparator;
-		sortedOrder = new ArrayList<>(initialCapacity);
-	}
-	
-	/**
-	 * Creates a new OrderedMap
-	 *
-	 * @param initialCapacity The initial capacity of the map
-	 */
-	public OrderedMap(int initialCapacity) {
-		super(initialCapacity);
 		sortedOrder = new ArrayList<>(initialCapacity);
 	}
 	
@@ -91,17 +70,7 @@ public class OrderedMap<K, V> extends HashMap<K, V>{
 		this.comparator = comparator;
 		sortedOrder = new ArrayList<>(this.entrySet());
 	}
-	
-	/**
-	 * Creates a new OrderedMap
-	 *
-	 * @param m The map to copy
-	 */
-	public OrderedMap(Map<? extends K, ? extends V> m) {
-		super(m);
-		sortedOrder = new ArrayList<>(this.entrySet());
-	}
-	
+
 	/**
 	 * Creates a new OrderedMap
 	 *
@@ -110,14 +79,6 @@ public class OrderedMap<K, V> extends HashMap<K, V>{
 	public OrderedMap(Comparator<Entry<K, V>> comparator) {
 		super();
 		this.comparator = comparator;
-		sortedOrder = new ArrayList<>();
-	}
-	
-	/**
-	 * Creates a new OrderedMap
-	 */
-	public OrderedMap() {
-		super();
 		sortedOrder = new ArrayList<>();
 	}
 	
