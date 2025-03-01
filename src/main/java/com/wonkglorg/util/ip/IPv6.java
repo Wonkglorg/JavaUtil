@@ -16,7 +16,7 @@ public class IPv6 extends IP<IPv6> {
             new IPv6(new String[]{"0000", "0000", "0000", "0000", "0000", "0000", "0000", "0000"});
     public static final IPv6 Max =
             new IPv6(new String[]{"ffff", "ffff", "ffff", "ffff", "ffff", "ffff", "ffff", "ffff"});
-    private String[] ip = new String[8];
+    private final String[] ip;
     private String ipShortenedText = null;
     private final String ipText;
 
