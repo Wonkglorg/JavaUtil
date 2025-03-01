@@ -6,80 +6,58 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class Tuple<K, V> implements Serializable, Cloneable {
-	private final K val1;
-	private final V val2;
-
-	public Tuple(K key, V value) {
-		this.val1 = key;
-		this.val2 = value;
+public record Tuple<K, V>(K first, V second) implements Serializable, Cloneable{
+	
+	public static <K, V> Tuple<K, V> of(K first, V second) {
+		return new Tuple<>(first, second);
 	}
-
-
-	public static <K, V> Tuple<K, V> of(K key, V value) {
-		return new Tuple<>(key, value);
-	}
-
-	/**
-	 * @return the first value
-	 */
-	public K getVal1() {
-		return val1;
-	}
-
-	/**
-	 * @return the second value
-	 */
-	public V getVal2() {
-		return val2;
-	}
-
+	
 	/**
 	 * Swaps the first and second value
 	 */
 	public Tuple<V, K> swap() {
-		return new Tuple<>(val2, val1);
+		return new Tuple<>(second, first);
 	}
-
+	
 	/**
 	 * Sets the new key for this tuple
 	 *
-	 * @param val2 the second value to set
+	 * @param second the second value to set
 	 */
-	public Tuple<K, V> setVal2(V val2) {
-		return new Tuple<>(val1, val2);
+	public Tuple<K, V> setSecond(V second) {
+		return new Tuple<>(first, second);
 	}
-
+	
 	/**
 	 * Sets the new key for this tuple
 	 *
-	 * @param val1 the first value to set
+	 * @param first the first value to set
 	 */
-	public Tuple<K, V> setVal1(K val1) {
-		return new Tuple<>(val1, val2);
+	public Tuple<K, V> setFirst(K first) {
+		return new Tuple<>(first, second);
 	}
-
+	
 	@Override
 	public String toString() {
-		return "Tuple{" + "key=" + val1 + ", value=" + val2 + '}';
+		return "Tuple{" + "first=" + first + ", second=" + second + '}';
 	}
-
+	
 	@Override
 	public boolean equals(Object object) {
-		if (this == object) {
+		if(this == object){
 			return true;
 		}
-		if (!(object instanceof Tuple<?, ?> tuple)) {
+		if(!(object instanceof Tuple<?, ?> tuple)){
 			return false;
 		}
-		return Objects.equals(val1, tuple.val1) && Objects.equals(val2, tuple.val2);
+		return Objects.equals(first, tuple.first) && Objects.equals(second, tuple.second);
 	}
-
+	
 	@Override
 	public int hashCode() {
-		return Objects.hash(val1, val2);
+		return Objects.hash(first, second);
 	}
-
+	
 	/**
 	 * Creates a copy of this object (in case values are mutable use
 	 * {@link #deepCopy(Function, Function)} instead
@@ -88,9 +66,9 @@ public class Tuple<K, V> implements Serializable, Cloneable {
 	 */
 	@Override
 	protected Object clone() throws CloneNotSupportedException {
-		return new Tuple<>(val1, val2);
+		return new Tuple<>(first, second);
 	}
-
+	
 	/**
 	 * Deep copies a tuple (in case values are mutable like lists
 	 *
@@ -99,29 +77,29 @@ public class Tuple<K, V> implements Serializable, Cloneable {
 	 * @return the tuple copy
 	 */
 	public Tuple<K, V> deepCopy(Function<K, K> keyCopyFunction, Function<V, V> valueCopyFunction) {
-		return new Tuple<>(keyCopyFunction.apply(val1), valueCopyFunction.apply(val2));
+		return new Tuple<>(keyCopyFunction.apply(first), valueCopyFunction.apply(second));
 	}
-
+	
 	/**
 	 * Converts a tuple to a map Entry
 	 */
 	public Map.Entry<K, V> toEntry() {
-		return new AbstractMap.SimpleEntry<>(val1, val2);
+		return new AbstractMap.SimpleEntry<>(first, second);
 	}
-
+	
 	/**
 	 * @return if one or more values are null
 	 */
 	public boolean hasNulls() {
-		return val1 == null || val2 == null;
+		return first == null || second == null;
 	}
-
+	
 	/**
 	 * @return if both values are null
 	 */
 	public boolean isEmpty() {
-		return val1 == null && val2 == null;
+		return first == null && second == null;
 	}
-
-
+	
 }
+
