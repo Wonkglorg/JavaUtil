@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.util.HashMap;
@@ -28,38 +29,12 @@ public abstract class Downloader {
             downloadStatuses.put(status, 0);
         }
     }
-
+    
 
     protected void incrementStatus(Status status) {
         downloadStatuses.computeIfPresent(status, (status1, count) -> count + 1);
     }
-
-    protected DownloadResult downloadFile(String fileUrl, File filePath, boolean extraInfo) {
-        try {
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(fileUrl)).build();
-            HttpResponse<InputStream> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream());
-            Files.copy(response.body(), filePath.toPath());
-            return new DownloadResult(fileUrl, filePath, Status.SUCCESS, "Downloaded " + fileUrl);
-        } catch (FileAlreadyExistsException e) {
-            if (extraInfo) {
-                logger.log(Level.INFO, "File already exists: " + filePath);
-            }
-            return new DownloadResult(fileUrl, filePath, Status.SKIPPED, "File already exists");
-
-        } catch (IllegalArgumentException e) {
-            if (extraInfo) {
-                logger.log(Level.INFO, "Invalid URL: " + fileUrl);
-            }
-            return new DownloadResult(fileUrl, filePath, Status.ERROR, "Invalid URL");
-
-        } catch (Exception e) {
-            if (extraInfo) {
-                logger.log(Level.SEVERE, "Error downloading " + fileUrl + ": " + e.getMessage(), e);
-            }
-            return new DownloadResult(fileUrl, filePath, Status.ERROR, "Error downloading file", e);
-        }
-    }
-
+    
     /**
      * Download a file from the given URL and save it to the target path.
      *
@@ -68,7 +43,32 @@ public abstract class Downloader {
      * @return The downloaded / existing file or an empty optional if the download failed.
      */
     protected DownloadResult downloadFile(String fileUrl, File filePath) {
-        return downloadFile(fileUrl, filePath, false);
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(fileUrl)).header("User-Agent", "Mozilla/5.0").build();
+        return downloadFile(request, filePath);
+    }
+    
+    protected DownloadResult downloadFile(HttpRequest request, File filePath) {
+        String url = request.uri().toString();
+        try{
+            HttpResponse<InputStream> response = HTTP_CLIENT.send(request, BodyHandlers.ofInputStream());
+            
+            if(response.statusCode() != 200){
+                incrementStatus(Status.ERROR);
+                return new DownloadResult(null, null, Status.ERROR, "Failed to get document");
+            }
+            Files.copy(response.body(), filePath.toPath());
+            incrementStatus(Status.SUCCESS);
+            return new DownloadResult(url, filePath, Status.SUCCESS, "Downloaded " + request.uri());
+        } catch(FileAlreadyExistsException var6){
+            incrementStatus(Status.SKIPPED);
+            return new DownloadResult(url, filePath, Status.SKIPPED, "File already exists");
+        } catch(IllegalArgumentException var7){
+            incrementStatus(Status.ERROR);
+            return new DownloadResult(url, filePath, Status.ERROR, "Invalid URL");
+        } catch(Exception var8){
+            incrementStatus(Status.ERROR);
+            return new DownloadResult(url, filePath, Status.ERROR, "Error downloading file", var8);
+        }
     }
 
 
