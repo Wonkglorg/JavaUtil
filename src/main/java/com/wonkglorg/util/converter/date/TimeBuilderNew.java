@@ -1,6 +1,7 @@
 package com.wonkglorg.util.converter.date;
 
 import java.math.BigInteger;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -65,15 +66,13 @@ public class TimeBuilderNew {
 			return new TimeBuilderNew(seconds, nanos);
 		}
 	}
-
-	public static TimeBuilderNew create(long time, DateType type) {
-		if (time == 0) {
-			return new TimeBuilderNew(0, 0);
+	
+	public static TimeBuilderNew create(Duration duration) {
+		if (duration.isNegative()) {
+			throw new IllegalArgumentException("Time cannot be negative!");
+		} else {
+			return new TimeBuilderNew(duration.getSeconds(), duration.getNano());
 		}
-
-		//todo:jmd properly set data type? Best case without BigInts for performance
-
-		return new TimeBuilderNew(time.mu);
 	}
 
 
