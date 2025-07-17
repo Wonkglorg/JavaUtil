@@ -1,5 +1,6 @@
 package com.wonkglorg.util.converter.date;
 
+import java.math.BigInteger;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 
@@ -7,10 +8,9 @@ import java.time.temporal.ChronoUnit;
  * Enum for common date types
  */
 public enum DateType {
-	//unused
-	//NANO("n", "Nanosecond", Duration.ofNanos(1)),
-	//MICRO("µ", "Microsecond", Duration.ofNanos(1000)),
-	MILLISECOND("ms", "Millisecond", Duration.ofMillis(1)),
+	NANO("ns", "Nanosecond", Duration.ofNanos(1)),
+	MICRO("µ", "Microsecond", Duration.ofNanos(1000)),
+	MILLI("ms", "Millisecond", Duration.ofMillis(1)),
 	SECOND("s", "Second", Duration.ofSeconds(1)),
 	MINUTE("m", "Minute", Duration.ofMinutes(1)),
 	HOUR("h", "Hour", Duration.ofHours(1)),
@@ -31,9 +31,19 @@ public enum DateType {
 	private final String postfix;
 	private final String fullName;
 	private final Duration duration;
+
 	//cached for better effiency
-	private final long milliseconds;
 	private final long seconds;
+	private final long milliseconds;
+	private final long nanoseconds;
+	/**
+	 * Total Nanosecond time, including values above seconds
+	 */
+	private final BigInteger nanoSecondsTotal;
+	/**
+	 * Total Milliseconds represented by this time stamp
+	 */
+	private final BigInteger millisecondsTotal;
 
 	DateType(String postfix, String fullName, Duration duration) {
 		this.postfix = postfix;
@@ -41,6 +51,14 @@ public enum DateType {
 		this.duration = duration;
 		this.milliseconds = duration.toMillis();
 		this.seconds = duration.toSeconds();
+		this.nanoseconds = duration.toNanos();
+		this.nanoSecondsTotal = BigInteger.valueOf(seconds)//
+				.multiply(BigInteger.valueOf(1_000_000_000L))//
+				.add(BigInteger.valueOf(nanoseconds));
+
+		this.millisecondsTotal = BigInteger.valueOf(seconds)//
+				.multiply(BigInteger.valueOf(1_000L))//
+				.add(BigInteger.valueOf(nanoseconds / 1_000_000));
 	}
 
 	/**
@@ -65,19 +83,47 @@ public enum DateType {
 		return milliseconds;
 	}
 
-	//unused as it had too many easy exceptions it could throw,
-	// if nano seconds are really needed use some existing system
-	// this isn't meant to be nano accurate just useful
 	/**
-	 * @return the represented dateType in nanoSeconds
-	 * @throws ArithmeticException if numeric overflow occurs
+	 * @return is always positive, and never exceeds 999,999,999. This reaches up to the 1 Second
+	 * mark, anything bigger can be retrieved from {@link #getSeconds()}
 	 */
-	/*
-	public long getNanos() {
-		return duration.toNanos();
+	public long getNanoseconds() {
+		return nanoseconds;
 	}
 
+	/**
+	 * @return the entire value as nanoseconds
 	 */
+	public BigInteger getTotalNanoSeconds() {
+		return nanoSecondsTotal;
+	}
+
+	/**
+	 * @return the time in nanoseconds without number exception potential for large values
+	 */
+	public BigInteger getTotalMilliSeconds(){
+		return millisecondsTotal;
+	}
+
+	/**
+	 * Converts a given value to NanoSeconds
+	 * @param time the time value
+	 * @param format the type
+	 * @return a value representing the given time in NanoSeconds
+	 */
+	public static BigInteger toNanos(long time, DateType format) {
+		return BigInteger.valueOf(time).multiply(format.getTotalNanoSeconds());
+	}
+	
+	/**
+	 * Converts a given value to MilliSeconds
+	 * @param time the time value
+	 * @param format the type
+	 * @return a value representing the given time in MilliSeconds
+	 */
+	public static BigInteger toMillis(long time, DateType format) {
+		return BigInteger.valueOf(time).multiply(format.getTotalMilliSeconds());
+	}
 
 	/**
 	 * @return the representing dateTypes full name singular
@@ -91,9 +137,9 @@ public enum DateType {
 	 */
 	public ChronoUnit toChronoUnit() {
 		return switch (this) {
-			//case NANO -> ChronoUnit.NANOS;
-			//case MICRO -> ChronoUnit.MICROS;
-			case MILLISECOND -> ChronoUnit.MILLIS;
+			case NANO -> ChronoUnit.NANOS;
+			case MICRO -> ChronoUnit.MICROS;
+			case MILLI -> ChronoUnit.MILLIS;
 			case SECOND -> ChronoUnit.SECONDS;
 			case MINUTE -> ChronoUnit.MINUTES;
 			case HOUR -> ChronoUnit.HOURS;
