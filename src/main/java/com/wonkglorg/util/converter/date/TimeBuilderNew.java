@@ -54,9 +54,15 @@ public class TimeBuilderNew {
 		} else if (compare == 0) {
 			return new TimeBuilderNew(0, 0);
 		} else {
-			return new TimeBuilderNew(//
-					nanoTime.divide(NANO_DIVIDER).longValue(), //
-					nanoTime.mod(NANO_DIVIDER).longValue());
+			BigInteger[] divAndRemainder = nanoTime.divideAndRemainder(NANO_DIVIDER);
+			long seconds = divAndRemainder[0].longValue();
+			long nanos = divAndRemainder[1].longValue();
+			if (nanos < 0) {
+				nanos += 1_000_000_000L;
+				seconds -= 1;
+			}
+
+			return new TimeBuilderNew(seconds, nanos);
 		}
 	}
 
@@ -110,7 +116,6 @@ public class TimeBuilderNew {
 		formats.addAll(Arrays.asList(types));
 		return this;
 	}
-	
 
 
 }
