@@ -32,9 +32,18 @@ public enum DateType {
 	private final String fullName;
 	private final Duration duration;
 
-	//cached for better effiency
+	//cached for better efficiency
+	/**
+	 * Second representation of a DateType
+	 */
 	private final long seconds;
+	/**
+	 * MilliSecond representation of a DateType
+	 */
 	private final long milliseconds;
+	/**
+	 * NanoSecond representation of a DateType up to the "Second" format, this value never exceeds 999.999.999 and is always positive
+	 */
 	private final long nanoseconds;
 	/**
 	 * Total Nanosecond time, including values above seconds
