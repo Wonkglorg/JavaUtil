@@ -1,6 +1,8 @@
 package com.wonkglorg.util.converter.date;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -9,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.ToLongFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -114,6 +117,98 @@ public class TimeBuilderNew {
 	public TimeBuilderNew typesToShow(DateType... types) {
 		formats.addAll(Arrays.asList(types));
 		return this;
+	}
+
+
+
+
+	/**
+	 * Helper method to convert the time to a human-readable format with customisations
+	 *
+	 * @param time the time to convert
+	 * @param timeConversion the conversion to apply to the datatype
+	 * @param useFullNames weather to use the full name to display or the shortened names
+	 * @param capitalizeFirstLetter when full names are enabled convert the first letter of the
+	 * name
+	 * to capital
+	 * @param forceAllTypes forces all possible datatypes to be displayed even if their value is 0
+	 * @param formats which formats to show if non are selected and forceAllTypes is off splits
+	 * them
+	 * into all formats that this value fits in biggest to smallest
+	 * @return the human-readable time string.
+	 */
+	private String convertTimeToString(long time, ToLongFunction<DateType> timeConversion,
+			boolean useFullNames, boolean capitalizeFirstLetter, boolean forceAllTypes,
+			Set<DateType> formats) {
+		List<DateType> dateList = CACHED_TYPES.computeIfAbsent(formats,
+				v -> formats.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList());
+
+		StringBuilder sb = new StringBuilder();
+		boolean isLastDateType;
+
+		for (int i = 0; i < dateList.size(); i++) {
+			DateType dateType = dateList.get(i);
+			long dateTypeTime = timeConversion.applyAsLong(dateType);
+		//TODO, check if value is small enough to be compared etc
+			if (dateTypeTime <= 0) {
+				if (forceAllTypes) {
+					String name = timePostfix(dateType, 0, useFullNames, capitalizeFirstLetter);
+					sb.append("%d%s ".formatted(0, name));
+				}
+				continue; // Skip if value is too small
+			}
+			isLastDateType = (i == dateList.size() - 1);
+
+			long value = time / dateTypeTime;
+			if (!isLastDateType) {
+				time %= dateTypeTime;
+			}
+
+			// weather or not this is the last type in the list
+			if ((value > 0 || forceAllTypes)) {
+				if (isLastDateType) {
+					double decimalValue = (double) time / dateTypeTime;
+					String name = timePostfix(dateType, 3, useFullNames, capitalizeFirstLetter);
+					sb.append("%s%s".formatted(
+							formatDecimal(decimalValue, maxDecimalsToShow, trimTrailingDecimalZeros), name));
+				} else {
+					String name = timePostfix(dateType, value, useFullNames, capitalizeFirstLetter);
+					sb.append(value).append(name).append(" ");
+					//sb.append("%d%s ".formatted(value, name));
+				}
+			}
+		}
+
+		return sb.toString().trim();
+	}
+
+
+	private String formatDecimal(double decimalValue, int maxDecimalPlaces,
+			boolean trimTrailingZeros) {
+
+		BigDecimal bigDecimal =
+				BigDecimal.valueOf(decimalValue).setScale(maxDecimalPlaces, RoundingMode.HALF_UP);
+		if (trimTrailingZeros) {
+			return bigDecimal.stripTrailingZeros().toPlainString();
+		}
+		return bigDecimal.toPlainString();
+	}
+
+	private String timePostfix(DateType type, long value, boolean useFullName,
+			boolean capitalizeFirstLetter) {
+		if (!useFullName) {
+			return type.getPostfix();
+		}
+		String name = " " + type.getFullName();
+
+		if (!capitalizeFirstLetter) {
+			name = name.toLowerCase();
+		}
+		if (value > 1) {
+			name = name + "s";
+		}
+
+		return name;
 	}
 
 
