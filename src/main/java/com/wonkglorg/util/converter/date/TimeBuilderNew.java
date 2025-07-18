@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.ToLongFunction;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -69,7 +70,7 @@ public class TimeBuilderNew {
 			return new TimeBuilderNew(seconds, nanos);
 		}
 	}
-	
+
 	public static TimeBuilderNew create(Duration duration) {
 		if (duration.isNegative()) {
 			throw new IllegalArgumentException("Time cannot be negative!");
@@ -80,7 +81,8 @@ public class TimeBuilderNew {
 
 
 	public static TimeBuilderNew create(String timeString) {
-		return new TimeBuilderNew();
+		long[] time = parseString(timeString);
+		return new TimeBuilderNew(time[0], time[1]);
 	}
 
 	/**
@@ -120,8 +122,6 @@ public class TimeBuilderNew {
 	}
 
 
-
-
 	/**
 	 * Helper method to convert the time to a human-readable format with customisations
 	 *
@@ -149,7 +149,7 @@ public class TimeBuilderNew {
 		for (int i = 0; i < dateList.size(); i++) {
 			DateType dateType = dateList.get(i);
 			long dateTypeTime = timeConversion.applyAsLong(dateType);
-		//TODO, check if value is small enough to be compared etc
+			//TODO, check if value is small enough to be compared etc
 			if (dateTypeTime <= 0) {
 				if (forceAllTypes) {
 					String name = timePostfix(dateType, 0, useFullNames, capitalizeFirstLetter);
@@ -199,7 +199,7 @@ public class TimeBuilderNew {
 		if (!useFullName) {
 			return type.getPostfix();
 		}
-		String name = " " + type.getFullName();
+		String name = " " + type.getFullNameSingular();
 
 		if (!capitalizeFirstLetter) {
 			name = name.toLowerCase();
@@ -209,6 +209,66 @@ public class TimeBuilderNew {
 		}
 
 		return name;
+	}
+
+
+	/**
+	 * Converts a String to its representing seconds and nanoseconds
+	 * @param timeString the string to parse
+	 * @return a 2 element long array where index 0 is seconds and index 1 is nanoseconds
+	 */
+	private static long[] parseString(String timeString) {
+		if (timeString == null || timeString.isBlank()) {
+			return new long[]{0, 0};
+		}
+		long nanos = 0;
+		long seconds = 0;
+
+		Matcher matcher = PATTERN.matcher(timeString);
+		while (matcher.find()) {
+			double value = parseValue(matcher.group(1));
+			String suffix = matcher.group(2);
+
+			DateType type = DateType.fromIdentifier(suffix);
+			if (type != null) {
+				if (type.typeStoredInNanos()) {
+					nanos += (long) (type.getNanoseconds() * value);
+				} else {
+					seconds += (long) (type.getSeconds() * value);
+				}
+			}
+		}
+
+		seconds += nanos / 1_000_000_000;
+		nanos = nanos % 1_000_000_000;
+
+		return new long[]{seconds, nanos};
+	}
+
+
+	/**
+	 * Parses a string value to either long or double depending on which is applicable
+	 *
+	 * @param stringValue the value to parse
+	 * @return the parsed value
+	 */
+	private static double parseValue(String stringValue) {
+		if(stringValue.contains(",")) {
+			stringValue = stringValue.replace(",", ".");
+		}
+		try {
+			return Long.parseLong(stringValue);
+		} catch (NumberFormatException e) {
+			try {
+				return Double.parseDouble(stringValue);
+			} catch (NumberFormatException ex) {
+				throw new IllegalArgumentException("Invalid value for time parsing: " + stringValue);
+			}
+		}
+	}
+
+	public long toMillis() {
+		return ((seconds * 1_000) + (nanos / 1_000_000));
 	}
 
 
