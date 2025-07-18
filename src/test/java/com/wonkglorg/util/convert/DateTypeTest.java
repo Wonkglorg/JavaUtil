@@ -1,19 +1,25 @@
 package com.wonkglorg.util.convert;
 
 import com.wonkglorg.util.converter.date.DateType;
-import com.wonkglorg.util.converter.date.TimeBuilderNew;
+import com.wonkglorg.util.converter.date.TimeBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
+
 class DateTypeTest {
 	@Test
-	void name() {
+	void canResolveLargeStringInputs() {
 		String expectedTime = "124E 335ML 7D 7Y 4M 2W 5d 14h 21m 43s 333ms";
 		long expectedMillis = 3921031000333303333L;
-		for (int i = 0; i < 999; i++) {
-			TimeBuilderNew builder = TimeBuilderNew.create(expectedTime);
-			Assertions.assertEquals(expectedMillis, builder.toMillis());
+		TimeBuilder builder = TimeBuilder.create(expectedTime);
+		Assertions.assertEquals(expectedMillis, builder.toMillis());
+		for(int i = 0; i <999999;i++) {
+			TimeBuilder.create(Duration.of(i, ChronoUnit.SECONDS)).forceShowAllTypes().toTimeString();
 		}
+		System.out.println(builder.toTimeString());
 	}
 
 

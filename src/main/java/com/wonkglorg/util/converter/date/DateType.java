@@ -232,4 +232,8 @@ public enum DateType {
 			LOOKUP_CACHE.put(type.getFullNamePlural().toLowerCase(), type);
 		}
 	}
+
+	public byte getSignificance() {
+		return significance;
+	}
 }

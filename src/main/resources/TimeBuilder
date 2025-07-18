@@ -104,26 +104,9 @@ public class TimeBuilder {
 		return this;
 	}
 
-	/**
-	 * If set, shows the full names instead of the shortened symbols when outputting as text
-	 *
-	 * @param capitalizeFirstLetter if set to true capitalizes the first letter of the name
-	 */
-	public TimeBuilder useFullName(boolean capitalizeFirstLetter) {
-		this.useFullName = true;
-		this.capitalizeFirstLetter = capitalizeFirstLetter;
-		return this;
-	}
 
-	/**
-	 * Forces all types to be shown in the resul even if they aren't relevant to the current
-	 * results
-	 * size (will not apply if a specified {@link #typesToShow(DateType...)} is given
-	 */
-	public TimeBuilder forceShowAllTypes() {
-		this.forceAllValues = true;
-		return this;
-	}
+
+
 
 	/**
 	 * Which types to show in the output, if not specified shows only the ones selected or all if
