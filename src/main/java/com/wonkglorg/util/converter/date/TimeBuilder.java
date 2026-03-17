@@ -265,9 +265,19 @@ public class TimeBuilder{
 			DateType type = DateType.fromIdentifier(suffix);
 			if(type != null){
 				if(type.typeStoredInNanos()){
-					nanos += (long) (type.getNanoseconds() * value);
+					double totalNanos = type.getNanoseconds() * value;
+					
+					long wholeNanos = (long) totalNanos;
+					nanos += wholeNanos;
+					
 				} else {
-					seconds += (long) (type.getSeconds() * value);
+					double totalSeconds = type.getSeconds() * value;
+					
+					long wholeSeconds = (long) totalSeconds;
+					double fractionalSeconds = totalSeconds - wholeSeconds;
+					
+					seconds += wholeSeconds;
+					nanos += Math.round(fractionalSeconds * 1_000_000_000L);
 				}
 			}
 		}
@@ -301,5 +311,30 @@ public class TimeBuilder{
 	
 	public long toMillis() {
 		return ((seconds * 1_000) + (nanos / 1_000_000));
+	}
+	
+	/**
+	 * Converts the time to the specified format, this only supports formats up to millis and can fail if the value is too big for a slower but accurate result use {@link #toAccurate(DateType)}
+	 *
+	 * @param type the type to convert it to
+	 * @return how many of specified unit
+	 */
+	public long to(DateType type) {
+		if(type.getSignificance() < DateType.MILLI.getSignificance()){
+			throw new IllegalArgumentException("This method does not support nanos or millis");
+		}
+		long totalMillis = (seconds * 1_000L) + (nanos / 1_000_000L);
+		return totalMillis / type.getTotalMilliSeconds().longValue();
+	}
+	
+	/**
+	 * Converts the time to the specified format
+	 *
+	 * @param type the type to convert it to
+	 * @return how many of specified unit
+	 */
+	public BigDecimal toAccurate(DateType type) {
+		BigInteger totalNanos = BigInteger.valueOf(seconds).multiply(BigInteger.valueOf(1_000_000_000L)).add(BigInteger.valueOf(nanos));
+		return new BigDecimal(totalNanos).divide(new BigDecimal(type.getTotalNanoSeconds()), RoundingMode.HALF_UP);
 	}
 }
