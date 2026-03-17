@@ -15,75 +15,72 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class TimeBuilder {
+public class TimeBuilder{
 	/**
 	 * Pattern to match any valid int + datatype pair checks for numbers or decimal numbers followed
 	 * by any amount of spaces and uppercase / lowercase letters
 	 */
 	private static final Pattern PATTERN = Pattern.compile("(\\d+(?:[.,]\\d+)?)\\s*([a-zA-Zµ]+)");
-	private static final Comparator<DateType> COMPARATOR_BIGGEST_TIME_FIRST =
-			Comparator.comparingLong(DateType::getSignificance).reversed();
-	private static final Set<DateType> ALL_TYPES =
-			Arrays.stream(DateType.values()).collect(Collectors.toSet());
+	private static final Comparator<DateType> COMPARATOR_BIGGEST_TIME_FIRST = Comparator.comparingLong(DateType::getSignificance).reversed();
+	private static final Set<DateType> ALL_TYPES = Arrays.stream(DateType.values()).collect(Collectors.toSet());
 	/**
 	 * Caches correct ordering for each set of given DateTypes removing the need to sort them for
 	 * future uses. This can be disabled setting {@link #CACHED_TYPES} to false
 	 */
 	private static final Map<Set<DateType>, List<DateType>> CACHED_TYPES = new ConcurrentHashMap<>();
 	private static final BigInteger NANO_DIVIDER = BigInteger.valueOf(1_000_000_000L);
-
+	
 	//--------------Time--------------
 	private final long nanos;
 	private final long seconds;
-
+	
 	//--------------Flags--------------
-
+	
 	private boolean forceAllValues = false;
 	private boolean trimTrailingDecimalZeros = true;
 	private int maxDecimalsToShow = 2;
 	private boolean useFullName = false;
+	private boolean allowDecimals = true;
 	private boolean capitalizeFirstLetter = true;
 	private final Set<DateType> formats = new HashSet<>();
-
-
+	
 	private TimeBuilder(long seconds, long nanos) {
 		this.seconds = seconds;
 		this.nanos = nanos;
 	}
-
+	
 	public static TimeBuilder create(BigInteger nanoTime) {
 		int compare = nanoTime.compareTo(BigInteger.ZERO);
-		if (compare < 0) {
+		if(compare < 0){
 			throw new IllegalArgumentException("Time cannot be negative!");
-		} else if (compare == 0) {
+		} else if(compare == 0){
 			return new TimeBuilder(0, 0);
 		} else {
 			BigInteger[] divAndRemainder = nanoTime.divideAndRemainder(NANO_DIVIDER);
 			long seconds = divAndRemainder[0].longValue();
 			long nanos = divAndRemainder[1].longValue();
-			if (nanos < 0) {
+			if(nanos < 0){
 				nanos += 1_000_000_000L;
 				seconds -= 1;
 			}
-
+			
 			return new TimeBuilder(seconds, nanos);
 		}
 	}
-
+	
 	public static TimeBuilder create(Duration duration) {
-		if (duration.isNegative()) {
+		if(duration.isNegative()){
 			throw new IllegalArgumentException("Time cannot be negative!");
 		} else {
 			return new TimeBuilder(duration.getSeconds(), duration.getNano());
 		}
 	}
-
-
+	
 	public static TimeBuilder create(String timeString) {
 		long[] time = parseString(timeString);
 		return new TimeBuilder(time[0], time[1]);
 	}
-
+	
 	/**
 	 * If set, shows the rest as decimal places if otherwise truncates the decimals if the selected
 	 * {@link DateType}s can't hold all the values
@@ -97,8 +94,7 @@ public class TimeBuilder {
 		this.maxDecimalsToShow = maxDecimalsToShow;
 		return this;
 	}
-
-
+	
 	/**
 	 * Forces all types to be shown in the resul even if they aren't relevant to the current
 	 * results
@@ -108,7 +104,7 @@ public class TimeBuilder {
 		this.forceAllValues = true;
 		return this;
 	}
-
+	
 	/**
 	 * Which types to show in the output, if not specified shows only the ones selected or all if
 	 * {@link #forceShowAllTypes()} is set
@@ -119,7 +115,7 @@ public class TimeBuilder {
 		formats.addAll(Arrays.asList(types));
 		return this;
 	}
-
+	
 	/**
 	 * If set, shows the full names instead of the shortened symbols when outputting as text
 	 *
@@ -130,8 +126,12 @@ public class TimeBuilder {
 		this.capitalizeFirstLetter = capitalizeFirstLetter;
 		return this;
 	}
-
-
+	
+	public TimeBuilder noDecimals() {
+		this.allowDecimals = false;
+		return this;
+	}
+	
 	/**
 	 * Helper method to convert the time to a human-readable format with customisations
 	 * them
@@ -142,64 +142,72 @@ public class TimeBuilder {
 	public String toTimeString() {
 		List<DateType> dateList = CACHED_TYPES.computeIfAbsent(formats.isEmpty() ? ALL_TYPES : formats,
 				v -> v.stream().sorted(COMPARATOR_BIGGEST_TIME_FIRST).toList());
-
+		
 		StringBuilder sb = new StringBuilder();
-
+		
 		long remainingSeconds = seconds;
 		int remainingNanos = (int) nanos;
-
-		for (int i = 0; i < dateList.size(); i++) {
+		
+		for(int i = 0; i < dateList.size(); i++){
 			DateType dateType = dateList.get(i);
 			boolean isLast = (i == dateList.size() - 1);
-
-			if (dateType.typeStoredInNanos()) {
+			
+			if(dateType.typeStoredInNanos()){
 				int typeNanos = dateType.getNanoseconds();
-
-				if (typeNanos <= 0) {
-					if (forceAllValues) {
+				
+				if(typeNanos <= 0){
+					if(forceAllValues){
 						String name = timePostfix(dateType, 0, useFullName, capitalizeFirstLetter);
 						sb.append("0").append(name).append(" ");
 					}
 					continue;
 				}
-
+				
 				long value = remainingNanos / typeNanos;
 				remainingNanos %= typeNanos;
-
-				if (value > 0 || forceAllValues) {
-					if (isLast) {
-						double decimal = value + ((double) remainingNanos / typeNanos);
-						String name = timePostfix(dateType, 3, useFullName, capitalizeFirstLetter);
-						sb.append(formatDecimal(decimal, maxDecimalsToShow, trimTrailingDecimalZeros))
-								.append(name);
+				
+				if(value > 0 || forceAllValues){
+					if(isLast){
+						if(allowDecimals){
+							double decimal = value + ((double) remainingNanos / typeNanos);
+							String name = timePostfix(dateType, 3, useFullName, capitalizeFirstLetter);
+							sb.append(formatDecimal(decimal, maxDecimalsToShow, trimTrailingDecimalZeros)).append(name);
+						} else {
+							String name = timePostfix(dateType, value, useFullName, capitalizeFirstLetter);
+							sb.append(value).append(name);
+						}
 					} else {
 						String name = timePostfix(dateType, value, useFullName, capitalizeFirstLetter);
 						sb.append(value).append(name).append(" ");
 					}
 				}
-
+				
 			} else {
 				long typeSeconds = dateType.getSeconds();
-
-				if (typeSeconds <= 0) {
-					if (forceAllValues) {
+				
+				if(typeSeconds <= 0){
+					if(forceAllValues){
 						String name = timePostfix(dateType, 0, useFullName, capitalizeFirstLetter);
 						sb.append("0").append(name).append(" ");
 					}
 					continue;
 				}
-
+				
 				long value = remainingSeconds / typeSeconds;
 				remainingSeconds %= typeSeconds;
-
-				if (value > 0 || forceAllValues) {
-					if (isLast) {
-						double decimal =
-								value + ((double) remainingSeconds / typeSeconds) + ((double) remainingNanos
-																																		 / 1_000_000_000 / typeSeconds);
-						String name = timePostfix(dateType, 3, useFullName, capitalizeFirstLetter);
-						sb.append(formatDecimal(decimal, maxDecimalsToShow, trimTrailingDecimalZeros))
-								.append(name);
+				
+				if(value > 0 || forceAllValues){
+					if(isLast){
+						if(allowDecimals){
+							double decimal = value +
+											 ((double) remainingSeconds / typeSeconds) +
+											 ((double) remainingNanos / 1_000_000_000 / typeSeconds);
+							String name = timePostfix(dateType, 3, useFullName, capitalizeFirstLetter);
+							sb.append(formatDecimal(decimal, maxDecimalsToShow, trimTrailingDecimalZeros)).append(name);
+						} else {
+							String name = timePostfix(dateType, value, useFullName, capitalizeFirstLetter);
+							sb.append(value).append(name);
+						}
 					} else {
 						String name = timePostfix(dateType, value, useFullName, capitalizeFirstLetter);
 						sb.append(value).append(name).append(" ");
@@ -207,40 +215,35 @@ public class TimeBuilder {
 				}
 			}
 		}
-
+		
 		return sb.toString().trim();
 	}
-
-
-	private String formatDecimal(double decimalValue, int maxDecimalPlaces,
-			boolean trimTrailingZeros) {
-
-		BigDecimal bigDecimal =
-				BigDecimal.valueOf(decimalValue).setScale(maxDecimalPlaces, RoundingMode.HALF_UP);
-		if (trimTrailingZeros) {
+	
+	private String formatDecimal(double decimalValue, int maxDecimalPlaces, boolean trimTrailingZeros) {
+		
+		BigDecimal bigDecimal = BigDecimal.valueOf(decimalValue).setScale(maxDecimalPlaces, RoundingMode.HALF_UP);
+		if(trimTrailingZeros){
 			return bigDecimal.stripTrailingZeros().toPlainString();
 		}
 		return bigDecimal.toPlainString();
 	}
-
-	private String timePostfix(DateType type, long value, boolean useFullName,
-			boolean capitalizeFirstLetter) {
-		if (!useFullName) {
+	
+	private String timePostfix(DateType type, long value, boolean useFullName, boolean capitalizeFirstLetter) {
+		if(!useFullName){
 			return type.getPostfix();
 		}
 		String name = " " + type.getFullNameSingular();
-
-		if (!capitalizeFirstLetter) {
+		
+		if(!capitalizeFirstLetter){
 			name = name.toLowerCase();
 		}
-		if (value > 1) {
+		if(value > 1){
 			name = name + "s";
 		}
-
+		
 		return name;
 	}
-
-
+	
 	/**
 	 * Converts a String to its representing seconds and nanoseconds
 	 *
@@ -248,34 +251,33 @@ public class TimeBuilder {
 	 * @return a 2 element long array where index 0 is seconds and index 1 is nanoseconds
 	 */
 	private static long[] parseString(String timeString) {
-		if (timeString == null || timeString.isBlank()) {
+		if(timeString == null || timeString.isBlank()){
 			return new long[]{0, 0};
 		}
 		long nanos = 0;
 		long seconds = 0;
-
+		
 		Matcher matcher = PATTERN.matcher(timeString);
-		while (matcher.find()) {
+		while(matcher.find()){
 			double value = parseValue(matcher.group(1));
 			String suffix = matcher.group(2);
-
+			
 			DateType type = DateType.fromIdentifier(suffix);
-			if (type != null) {
-				if (type.typeStoredInNanos()) {
+			if(type != null){
+				if(type.typeStoredInNanos()){
 					nanos += (long) (type.getNanoseconds() * value);
 				} else {
 					seconds += (long) (type.getSeconds() * value);
 				}
 			}
 		}
-
+		
 		seconds += nanos / 1_000_000_000;
 		nanos = nanos % 1_000_000_000;
-
+		
 		return new long[]{seconds, nanos};
 	}
-
-
+	
 	/**
 	 * Parses a string value to either long or double depending on which is applicable
 	 *
@@ -283,20 +285,20 @@ public class TimeBuilder {
 	 * @return the parsed value
 	 */
 	private static double parseValue(String stringValue) {
-		if (stringValue.contains(",")) {
+		if(stringValue.contains(",")){
 			stringValue = stringValue.replace(",", ".");
 		}
-		try {
+		try{
 			return Long.parseLong(stringValue);
-		} catch (NumberFormatException e) {
-			try {
+		} catch(NumberFormatException e){
+			try{
 				return Double.parseDouble(stringValue);
-			} catch (NumberFormatException ex) {
+			} catch(NumberFormatException ex){
 				throw new IllegalArgumentException("Invalid value for time parsing: " + stringValue);
 			}
 		}
 	}
-
+	
 	public long toMillis() {
 		return ((seconds * 1_000) + (nanos / 1_000_000));
 	}
