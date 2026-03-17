@@ -71,6 +71,21 @@ public final class WeightedRandomPicker<T> {
         }
         return null;
     }
+	
+	/**
+	 * Clears the list of entries
+	 */
+	public void clear() {
+		entries.clear();
+		accumulatedWeight = 0;
+	}
+	
+	/**
+	 * @return true if the list to pick from is empty
+	 */
+	public boolean isEmpty() {
+		return entries.isEmpty();
+	}
 
     /**
      * Gets all entries from the list

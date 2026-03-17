@@ -11,10 +11,14 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+/**
+ * Class to manage and modify different inputs from places
+ * @param <T>
+ */
 @SuppressWarnings("unchecked, unused")
 public class ConsoleInput<T> {
 
-    private static final String defaultErrorMessage = "Invalid input try again: ";
+    private static final String DEFAULT_ERROR_MESSAGE = "Invalid input try again: ";
     private static final Map<Class<?>, Function<String, Object>> converterMappings = new HashMap<>();
     private static Scanner scanner = new Scanner(System.in);
     private final Class<T> type;
@@ -47,12 +51,12 @@ public class ConsoleInput<T> {
 
     public static <T> ConsoleInput<T> of(Class<T> type) {
         checkIfConverterExists(type);
-        return new ConsoleInput<>(type, null, defaultErrorMessage);
+        return new ConsoleInput<>(type, null, DEFAULT_ERROR_MESSAGE);
     }
 
     public static <T> ConsoleInput<T> of(Class<T> type, String prompt) {
         checkIfConverterExists(type);
-        return new ConsoleInput<>(type, prompt, defaultErrorMessage);
+        return new ConsoleInput<>(type, prompt, DEFAULT_ERROR_MESSAGE);
     }
 
     public static <T> ConsoleInput<T> of(Class<T> type, String prompt, String errorMessage) {

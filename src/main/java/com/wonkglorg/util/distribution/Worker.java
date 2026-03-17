@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public class Worker<T> extends Thread {
 	private static final AtomicInteger workerIndex = new AtomicInteger(1);
@@ -16,7 +16,11 @@ public class Worker<T> extends Thread {
 	/** Queue of all jobs to be executed (shared per {@link WorkerPool} this worker is part of) */
 	private final BlockingQueue<WeightedJob<T>> jobQueue;
 	/** The Job a worker executes on the {@link #jobQueue} */
-	private final Consumer<T> workerJob;
+	private final BiConsumer<Worker<T>, T> workerJob;
+	/**
+	 * Call back to use when a job finishes (The job that ran and the time it took from start to end)
+	 */
+	private BiConsumer<WeightedJob<T>, Long> jobFinishCallBack = null;
 	/** If this worker is available to process an element */
 	private boolean isAvailable = false;
 	private final String workerName;
@@ -27,18 +31,21 @@ public class Worker<T> extends Thread {
 	 * @param workerJob the work to execute on a job
 	 */
 	public Worker(String workerName, BlockingQueue<WeightedJob<T>> taskQueue,
-			Consumer<T> workerJob) {
+			BiConsumer<Worker<T>, T> workerJob) {
+		this.setName(workerName);
 		this.workerName = workerName;
 		this.jobQueue = taskQueue;
 		this.workerJob = workerJob;
 		jobDurations = new ConcurrentHashMap<>(MAX_MAP_SIZE);
 	}
+
 	/**
-´´
+	 * ´´
+	 *
 	 * @param taskQueue the task queue it should retrieve its jobs from
 	 * @param workerJob the work to execute on a job
 	 */
-	public Worker(BlockingQueue<WeightedJob<T>> taskQueue, Consumer<T> workerJob) {
+	public Worker(BlockingQueue<WeightedJob<T>> taskQueue, BiConsumer<Worker<T>, T> workerJob) {
 		this("Worker%s".formatted(workerIndex.getAndIncrement()), taskQueue, workerJob);
 	}
 
@@ -58,9 +65,13 @@ public class Worker<T> extends Thread {
 				WeightedJob<T> job = jobQueue.take();
 				isAvailable = false;
 				long startTime = System.currentTimeMillis();
-				workerJob.accept(job.getJob());
+				workerJob.accept(this, job.getJob());
+				long duration = System.currentTimeMillis() - startTime;
+				if (jobFinishCallBack != null) {
+					jobFinishCallBack.accept(job, duration);
+				}
 				if (MAX_MAP_SIZE != 0) {
-					jobDurations.put(job, System.currentTimeMillis() - startTime);
+					jobDurations.put(job, duration);
 				}
 				cleanUpOldEntries();
 			}
@@ -106,6 +117,16 @@ public class Worker<T> extends Thread {
 
 		return new WorkerJobData<>(minDuration, maxDuration, jobDurations);
 	}
+
+	/**
+	 * Sets the {@link #jobFinishCallBack}
+	 *
+	 * @param jobFinishCallBack
+	 */
+	public void setJobFinishCallBack(BiConsumer<WeightedJob<T>, Long> jobFinishCallBack) {
+		this.jobFinishCallBack = jobFinishCallBack;
+	}
+
 
 	public record WorkerJobData<T>(long minDuration, long maxDuration,
 																 Map<WeightedJob<T>, Long> timings) {

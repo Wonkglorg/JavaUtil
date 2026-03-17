@@ -7,7 +7,8 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Predicate;
 
 /**
@@ -20,7 +21,7 @@ public class WorkerPool<T> {
 	/** The name of this pool */
 	private final String poolName;
 	private final BlockingQueue<WeightedJob<T>> taskQueue;
-	private final Consumer<T> workerJob;
+	private final BiConsumer<Worker<T>, T> workerJob;
 	private final List<Worker<T>> workers;
 	private final int workerCount;
 	private final Predicate<T> validateWorkerForJob;
@@ -36,7 +37,7 @@ public class WorkerPool<T> {
 	 * @param validateWorkerForJob weather or not this pool qualifies for a job
 	 */
 	public WorkerPool(String poolName, int workerCount, int priority, int capacity,
-			Consumer<T> workerJob, Predicate<T> validateWorkerForJob) {
+			BiConsumer<Worker<T>, T> workerJob, Predicate<T> validateWorkerForJob) {
 		this.poolName = poolName;
 		this.workerCount = workerCount;
 		this.priority = priority;
@@ -54,21 +55,33 @@ public class WorkerPool<T> {
 	 * @param workerJob the job they should execute
 	 * @param validateWorkerForJob weather or not this pool qualifies for a job
 	 */
-	public WorkerPool(int workerCount, int capacity, int priority, Consumer<T> workerJob,
+	public WorkerPool(int workerCount, int capacity, int priority,
+			BiConsumer<Worker<T>, T> workerJob,
 			Predicate<T> validateWorkerForJob) {
 		this("WorkerPool%s".formatted(poolIndex.getAndIncrement()), workerCount, priority, capacity,
 				workerJob, validateWorkerForJob);
 	}
 
 	/**
-	 * Starts the workers
+	 * Starts all workers in this pool
+	 *
+	 * @param workerName the name to give to each worker (given the current worker index and this
+	 * pool)
 	 */
-	public void startWorkers() {
+	public void startWorkers(BiFunction<Integer, WorkerPool<T>, String> workerName) {
 		for (int i = 0; i < workerCount; i++) {
-			Worker<T> workerThread = new Worker<>(taskQueue, workerJob);
+			Worker<T> workerThread = new Worker<>(workerName.apply(i, this), taskQueue, workerJob);
 			workerThread.start();
 			workers.add(workerThread);
 		}
+	}
+
+
+	/**
+	 * Starts the workers
+	 */
+	public void startWorkers() {
+		startWorkers((i, pool) -> "%s Worker %s".formatted(pool.getPoolName(), i));
 	}
 
 	//todo:jmd how to ensure all files that need to be processed get processed before shutting down?
@@ -78,6 +91,19 @@ public class WorkerPool<T> {
 		}
 	}
 
+	/**
+	 * Sets the callback to use for workers of this pool
+	 *
+	 * @param workerCallBack the callback (the job that ran, the time it took from start to end in
+	 * ms)
+	 */
+	public void setJobCallBackForWorkers(BiConsumer<WeightedJob<T>, Long> workerCallBack) {
+		workers.forEach(worker -> worker.setJobFinishCallBack(workerCallBack));
+	}
+
+	/**
+	 * @return If the current pool can take on more tasks in the queue
+	 */
 	public boolean isAvailable() {
 		return taskQueue.remainingCapacity() > 0;
 	}

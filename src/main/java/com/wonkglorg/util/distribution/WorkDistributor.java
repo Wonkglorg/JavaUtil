@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -125,7 +126,7 @@ public class WorkDistributor<T> {
 	 * @param validateWorkerForJob Predicate to validate if a worker can handle the task.
 	 * @param priority Priority of this worker pool (lower values mean higher priority).
 	 */
-	public void addWorkerPool(int workerCount, int priority, int capacity, Consumer<T> workerJob,
+	public void addWorkerPool(int workerCount, int priority, int capacity, BiConsumer<Worker<T>, T> workerJob,
 			Predicate<T> validateWorkerForJob) {
 		addWorkerPool(
 				new WorkerPool<>(workerCount, priority, capacity, workerJob, validateWorkerForJob));
