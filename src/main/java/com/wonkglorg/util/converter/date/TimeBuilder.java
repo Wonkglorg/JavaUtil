@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -307,6 +308,13 @@ public class TimeBuilder{
 				throw new IllegalArgumentException("Invalid value for time parsing: " + stringValue);
 			}
 		}
+	}
+	
+	/**
+	 * Returns the time as a duration
+	 */
+	public Duration toDuration() {
+		return Duration.of(seconds, ChronoUnit.SECONDS).plus(Duration.of(this.nanos, ChronoUnit.NANOS));
 	}
 	
 	public long toMillis() {
