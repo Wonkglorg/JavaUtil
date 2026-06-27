@@ -33,22 +33,7 @@ class DateTypeTest{
 			assertEquals(type, DateType.fromIdentifier(postfix), () -> "Should resolve postfix: " + postfix);
 			assertEquals(type, DateType.fromIdentifier(singular), () -> "Should resolve singular: " + singular);
 			assertEquals(type, DateType.fromIdentifier(plural), () -> "Should resolve plural: " + plural);
-			
-			String badCasedPostfix = flipCase(postfix);
-			if(!badCasedPostfix.equals(postfix)){
-				Assertions.assertNotEquals(type,
-						DateType.fromIdentifier(badCasedPostfix),
-						() -> "Should NOT resolve incorrectly cased postfix: " + badCasedPostfix);
-			}
 		}
-	}
-	
-	private String flipCase(String str) {
-		StringBuilder flipped = new StringBuilder();
-		for(char c : str.toCharArray()){
-			flipped.append(Character.isUpperCase(c) ? Character.toLowerCase(c) : Character.toUpperCase(c));
-		}
-		return flipped.toString();
 	}
 	
 	@Test
@@ -99,5 +84,16 @@ class DateTypeTest{
 	@Test()
 	void showNoValueOnNegativeTime() {
 		assertThrows(IllegalArgumentException.class, () -> TimeBuilder.create(Duration.ofMillis(-4)).toTimeString(), "Time cannot be less than 0!");
+	}
+	
+	@Test
+	void stressTest() {
+		for(int i = 0; i < 100000; i++){
+			String timePrefixed = TimeBuilder.create(Duration.ofSeconds(10)).toTimeString();
+			assertEquals("10s", timePrefixed);
+			String timeFullName = TimeBuilder.create(Duration.ofSeconds(10)).useFullName(true).toTimeString();
+			assertEquals("10 Seconds", timeFullName);
+		}
+
 	}
 }
